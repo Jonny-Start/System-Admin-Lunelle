@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; overflow-x: hidden; margin: 0; }
+    
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Hide spin-button arrows in all number inputs */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    .glass-nav { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border-top: 1px solid rgba(255, 255, 255, 0.05); }
+    .glass-sidebar { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.05); }
+    .glass-card { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    
+    /* Micro animations */
+    .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); }
+    .card-hover:active { transform: scale(0.98); }
+    
+    .nav-item { transition: all 0.2s ease; border-left: 3px solid transparent; }
+    .nav-item.active { background: rgba(99, 102, 241, 0.15); color: #818cf8; border-left: 3px solid #818cf8; }
+    
+    .toast-enter { animation: slideIn 0.3s ease-out forwards; }
+    .toast-leave { animation: slideOut 0.3s ease-in forwards; }
+    
+    @keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+    
+    .view-section { display: none; animation: fadeIn 0.3s ease-out forwards; }
+    .view-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Custom Select Dropdown */
+    .custom-select-wrapper { position: relative; }
+    .custom-select-dropdown {
+      position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 50;
+      background: #1e293b; border: 1px solid rgba(99,102,241,0.3); border-radius: 16px;
+      max-height: 220px; overflow-y: auto; box-shadow: 0 20px 50px -12px rgba(0,0,0,0.7);
+      display: none; animation: dropIn 0.2s ease-out;
+    }
+    .custom-select-dropdown.open { display: block; }
+    @keyframes dropIn { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: translateY(0); } }
+    .custom-select-option {
+      padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 500; color: #cbd5e1; transition: all 0.15s;
+    }
+    .custom-select-option:first-child { border-radius: 16px 16px 0 0; }
+    .custom-select-option:last-child { border-radius: 0 0 16px 16px; }
+    .custom-select-option:hover { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+    .custom-select-option.highlighted { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+    .custom-select-empty { padding: 20px 16px; text-align: center; color: #64748b; font-size: 13px; }
+
+    /* Category color accents */
+    .cat-accent-0 { --cat-color: #818cf8; --cat-bg: rgba(129,140,248,0.1); }
+    .cat-accent-1 { --cat-color: #34d399; --cat-bg: rgba(52,211,153,0.1); }
+    .cat-accent-2 { --cat-color: #f472b6; --cat-bg: rgba(244,114,182,0.1); }
+    .cat-accent-3 { --cat-color: #fbbf24; --cat-bg: rgba(251,191,36,0.1); }
+    .cat-accent-4 { --cat-color: #38bdf8; --cat-bg: rgba(56,189,248,0.1); }
+    .cat-accent-5 { --cat-color: #fb923c; --cat-bg: rgba(251,146,60,0.1); }
+    .cat-accent-6 { --cat-color: #a78bfa; --cat-bg: rgba(167,139,250,0.1); }
+    .cat-accent-7 { --cat-color: #4ade80; --cat-bg: rgba(74,222,128,0.1); }
+
+    /* Dashboard Skeleton Loader */
+    .skeleton-text {
+      display: inline-block;
+      background: linear-gradient(90deg, rgba(51,65,85,0.3) 25%, rgba(71,85,105,0.4) 50%, rgba(51,65,85,0.3) 75%);
+      background-size: 200% 100%;
+      animation: skeletonPulse 1.5s ease-in-out infinite;
+      border-radius: 8px;
+      min-height: 1em;
+    }
+    @keyframes skeletonPulse {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Chart Mode Toggle Buttons */
+    .chart-mode-btn {
+      color: #64748b;
+      cursor: pointer;
+    }
+    .chart-mode-btn:hover {
+      color: #cbd5e1;
+    }
+    .chart-mode-btn.active {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Smooth card entrance */
+    @keyframes cardSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .glass-card { animation: cardSlideUp 0.4s ease-out both; }
+    .grid > .glass-card:nth-child(2) { animation-delay: 0.05s; }
+    .grid > .glass-card:nth-child(3) { animation-delay: 0.1s; }
+    .grid > .glass-card:nth-child(4) { animation-delay: 0.15s; }
+
+    /* Safe area padding for notched phones */
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 8px); }
+
+    /* More Menu (Mobile) */
+    .more-menu-item {
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+    .more-menu-item:active {
+      transform: scale(0.97);
+    }
+
+    /* Bottom nav mobile tap feedback */
+    .nav-item-mobile {
+      transition: transform 0.15s ease, color 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-item-mobile:active {
+      transform: scale(0.9);
+    }
+
+    /* FAB entrance */
+    #fabQuickSale {
+      animation: fabBounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+      animation-delay: 0.5s;
+    }
+    @keyframes fabBounceIn {
+      from { opacity: 0; transform: scale(0) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Quick Sale payment button active state */
+    .qs-payment-btn {
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .qs-payment-btn:active {
+      transform: scale(0.95);
+    }

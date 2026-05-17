@@ -1,0 +1,62 @@
+<% layout('layout') -%>
+<header class="mb-8">
+  <h2 class="text-2xl md:text-3xl font-bold text-white mb-1">Configuración</h2>
+  <p class="text-slate-400 text-sm">Administra la información pública de tu empresa</p>
+</header>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-1 space-y-6">
+    <!-- Logo Card -->
+    <div class="glass-card rounded-3xl p-6 flex flex-col items-center text-center border border-slate-700/50 relative overflow-hidden group">
+      <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent z-0"></div>
+      
+      <div id="logo-preview-container" class="w-28 h-28 rounded-3xl bg-slate-800 flex items-center justify-center text-slate-500 border border-slate-600 shadow-xl mb-4 relative z-10 group-hover:border-indigo-500/50 transition-colors overflow-hidden">
+        <i id="logo-icon" class="ph ph-buildings text-5xl group-hover:text-indigo-400 transition-colors"></i>
+        <img id="logo-img" src="" alt="Logo" class="w-full h-full object-cover hidden" />
+      </div>
+      
+      <h3 id="logo-name-display" class="text-xl font-bold text-white mb-1 relative z-10">...</h3>
+      <p class="text-xs text-slate-400 mb-5 relative z-10">Logotipo de la empresa</p>
+      
+      <input type="file" id="logo-input" accept="image/*" class="hidden">
+      <button type="button" id="btn-update-logo" class="relative z-10 text-xs font-bold text-indigo-400 hover:text-white hover:bg-indigo-500 px-4 py-2 rounded-xl bg-indigo-400/10 transition-all w-full border border-indigo-400/20 disabled:opacity-50 disabled:cursor-not-allowed">
+        Actualizar Logo
+      </button>
+    </div>
+  </div>
+
+  <div class="lg:col-span-2">
+    <!-- Details Card -->
+    <div class="glass-card rounded-3xl p-6 md:p-8 border border-slate-700/50">
+      <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+        <i class="ph-fill ph-info text-indigo-400"></i> Detalles del Negocio
+      </h3>
+      <form id="company-form" class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nombre Comercial</label>
+            <input type="text" id="company-name" required class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all disabled:opacity-50">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Sector / Rubro</label>
+            <input type="text" id="company-sector" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all disabled:opacity-50">
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Dirección Principal</label>
+          <div class="relative">
+            <i class="ph ph-map-pin absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg"></i>
+            <input type="text" id="company-address" placeholder="Ingresa la dirección completa" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all disabled:opacity-50">
+          </div>
+        </div>
+
+        <div class="pt-6 mt-6 border-t border-slate-800 flex justify-end">
+          <button type="submit" id="btn-save-company" class="py-3 px-6 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 transition-transform active:scale-95 disabled:opacity-50 flex items-center gap-2">
+            Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

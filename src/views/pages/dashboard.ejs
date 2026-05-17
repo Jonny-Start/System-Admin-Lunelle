@@ -1,0 +1,376 @@
+<% layout('layout') -%>
+<header class="mb-6 md:mb-8 flex flex-col md:flex-row justify-between md:items-end gap-4">
+  <div>
+    <h2 class="text-2xl md:text-3xl font-bold text-white mb-1 flex items-center gap-3">
+      <span class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-lg shadow-lg shadow-indigo-500/30">
+        <i class="ph-fill ph-chart-pie-slice"></i>
+      </span>
+      Visión General
+    </h2>
+    <p class="text-slate-400 text-sm">Resumen en tiempo real de tu inventario y negocio</p>
+  </div>
+  <div class="flex items-center gap-2">
+    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Última actualización:</span>
+    <span class="text-xs text-indigo-400 font-semibold" id="lastUpdate">--</span>
+    <button onclick="loadDashboard()" class="ml-2 p-2 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-white transition-all border border-slate-700/50 hover:border-indigo-500/30 group" title="Actualizar datos">
+      <i class="ph ph-arrows-clockwise text-lg group-hover:animate-spin"></i>
+    </button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ KPI CARDS ROW 1 ═══════════════════════════ -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+  
+  <!-- Total Productos -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-4 md:p-5 flex items-center gap-4 relative overflow-hidden group card-hover cursor-default">
+    <div class="absolute -right-4 -top-4 w-20 h-20 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
+    <div class="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center text-xl shrink-0 border border-indigo-500/10">
+      <i class="ph-fill ph-package"></i>
+    </div>
+    <div class="min-w-0">
+      <p class="text-slate-500 text-[10px] md:text-xs font-semibold uppercase tracking-wider mb-0.5">Productos</p>
+      <h3 class="text-xl md:text-2xl font-bold text-white tracking-tight" id="kpi-total-products">
+        <span class="skeleton-text w-12 h-6"></span>
+      </h3>
+    </div>
+  </div>
+
+  <!-- Total Stock Unidades -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-4 md:p-5 flex items-center gap-4 relative overflow-hidden group card-hover cursor-default">
+    <div class="absolute -right-4 -top-4 w-20 h-20 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+    <div class="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center text-xl shrink-0 border border-cyan-500/10">
+      <i class="ph-fill ph-stack"></i>
+    </div>
+    <div class="min-w-0">
+      <p class="text-slate-500 text-[10px] md:text-xs font-semibold uppercase tracking-wider mb-0.5">Unidades</p>
+      <h3 class="text-xl md:text-2xl font-bold text-white tracking-tight" id="kpi-total-stock">
+        <span class="skeleton-text w-12 h-6"></span>
+      </h3>
+    </div>
+  </div>
+
+  <!-- Categorías -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-4 md:p-5 flex items-center gap-4 relative overflow-hidden group card-hover cursor-default">
+    <div class="absolute -right-4 -top-4 w-20 h-20 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all"></div>
+    <div class="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-violet-500/15 text-violet-400 flex items-center justify-center text-xl shrink-0 border border-violet-500/10">
+      <i class="ph-fill ph-tag"></i>
+    </div>
+    <div class="min-w-0">
+      <p class="text-slate-500 text-[10px] md:text-xs font-semibold uppercase tracking-wider mb-0.5">Categorías</p>
+      <h3 class="text-xl md:text-2xl font-bold text-white tracking-tight" id="kpi-categories">
+        <span class="skeleton-text w-8 h-6"></span>
+      </h3>
+    </div>
+  </div>
+
+  <!-- Usuarios -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-4 md:p-5 flex items-center gap-4 relative overflow-hidden group card-hover cursor-default">
+    <div class="absolute -right-4 -top-4 w-20 h-20 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
+    <div class="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-xl shrink-0 border border-purple-500/10">
+      <i class="ph-fill ph-users"></i>
+    </div>
+    <div class="min-w-0">
+      <p class="text-slate-500 text-[10px] md:text-xs font-semibold uppercase tracking-wider mb-0.5">Equipo</p>
+      <h3 class="text-xl md:text-2xl font-bold text-white tracking-tight" id="kpi-users">
+        <span class="skeleton-text w-8 h-6"></span>
+      </h3>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ KPI CARDS ROW 2 - FINANCIEROS ═══════════════════════════ -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mt-3 md:mt-4">
+  
+  <!-- Total Inversión (con filtros) -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden group card-hover" id="investment-card">
+    <div class="absolute -right-6 -top-6 w-28 h-28 bg-amber-500/10 rounded-full blur-3xl group-hover:bg-amber-500/15 transition-all"></div>
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-lg border border-amber-500/10">
+          <i class="ph-fill ph-vault"></i>
+        </div>
+        <div>
+          <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Inversión Total</p>
+          <p class="text-[10px] text-slate-600 mt-0.5" id="investment-filter-label">Todos los productos</p>
+        </div>
+      </div>
+      <button onclick="toggleInvestmentFilter()" class="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-700 text-slate-400 hover:text-amber-400 transition-all border border-slate-700/50 hover:border-amber-500/30" title="Filtrar">
+        <i class="ph ph-faders text-base"></i>
+      </button>
+    </div>
+    <h3 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1" id="kpi-investment">
+      <span class="skeleton-text w-28 h-8"></span>
+    </h3>
+    <p class="text-xs text-slate-500 flex items-center gap-1">
+      <i class="ph ph-info text-sm"></i> Costo unitario × stock actual
+    </p>
+
+    <!-- Investment Filter Dropdown -->
+    <div id="investmentFilterPanel" class="hidden mt-4 pt-4 border-t border-slate-700/30">
+      <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Filtrar por Categoría</p>
+      <div class="flex flex-wrap gap-1.5 mb-3" id="inv-filter-categories"></div>
+      <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Filtrar por Etiqueta</p>
+      <div class="flex flex-wrap gap-1.5" id="inv-filter-tags"></div>
+    </div>
+  </div>
+
+  <!-- Valor de Venta -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden group card-hover">
+    <div class="absolute -right-6 -top-6 w-28 h-28 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/15 transition-all"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-lg border border-emerald-500/10">
+        <i class="ph-fill ph-currency-dollar-simple"></i>
+      </div>
+      <div>
+        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Valor de Venta</p>
+        <p class="text-[10px] text-slate-600 mt-0.5">Si se vende todo el inventario</p>
+      </div>
+    </div>
+    <h3 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1" id="kpi-sale-value">
+      <span class="skeleton-text w-28 h-8"></span>
+    </h3>
+    <p class="text-xs text-emerald-400/70 flex items-center gap-1">
+      <i class="ph ph-trend-up text-sm"></i> Precio venta × stock actual
+    </p>
+  </div>
+
+  <!-- Ganancia Potencial -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden group card-hover">
+    <div class="absolute -right-6 -top-6 w-28 h-28 bg-green-500/10 rounded-full blur-3xl group-hover:bg-green-500/15 transition-all"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-xl bg-green-500/15 text-green-400 flex items-center justify-center text-lg border border-green-500/10">
+        <i class="ph-fill ph-chart-line-up"></i>
+      </div>
+      <div>
+        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Ganancia Potencial</p>
+        <p class="text-[10px] text-slate-600 mt-0.5">Margen promedio: <span class="text-green-400 font-semibold" id="kpi-avg-margin">--</span>%</p>
+      </div>
+    </div>
+    <h3 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1" id="kpi-potential-profit">
+      <span class="skeleton-text w-28 h-8"></span>
+    </h3>
+    <p class="text-xs text-green-400/70 flex items-center gap-1">
+      <i class="ph ph-equals text-sm"></i> Valor venta − Inversión
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ CHARTS ROW ═══════════════════════════ -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 mt-3 md:mt-4">
+  
+  <!-- PIE Chart - Categorías -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center border border-indigo-500/10">
+          <i class="ph-fill ph-chart-pie text-lg"></i>
+        </div>
+        <h4 class="text-sm font-bold text-white">Distribución por Categoría</h4>
+      </div>
+      <div class="flex items-center gap-1 bg-slate-800/60 rounded-xl p-0.5 border border-slate-700/50">
+        <button onclick="switchCategoryChartMode('investment')" id="cat-mode-investment" class="chart-mode-btn active text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all">
+          Inversión
+        </button>
+        <button onclick="switchCategoryChartMode('count')" id="cat-mode-count" class="chart-mode-btn text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all">
+          Cantidad
+        </button>
+        <button onclick="switchCategoryChartMode('stock')" id="cat-mode-stock" class="chart-mode-btn text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all">
+          Stock
+        </button>
+      </div>
+    </div>
+    <div class="relative h-[280px] flex items-center justify-center">
+      <canvas id="categoryPieChart"></canvas>
+      <div id="categoryPieEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center">
+        <i class="ph-duotone ph-chart-pie text-4xl text-slate-600 mb-2"></i>
+        <p class="text-slate-500 text-sm">Sin datos de categorías</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BAR Chart - Top Productos por Inversión -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center border border-amber-500/10">
+          <i class="ph-fill ph-ranking text-lg"></i>
+        </div>
+        <h4 class="text-sm font-bold text-white">Top 5 Productos por Valor</h4>
+      </div>
+      <div class="flex items-center gap-1 bg-slate-800/60 rounded-xl p-0.5 border border-slate-700/50">
+        <button onclick="switchTopProductsMode('investment')" id="top-mode-investment" class="chart-mode-btn active text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all">
+          Inversión
+        </button>
+        <button onclick="switchTopProductsMode('margin')" id="top-mode-margin" class="chart-mode-btn text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all">
+          Margen %
+        </button>
+      </div>
+    </div>
+    <div class="relative h-[280px]">
+      <canvas id="topProductsChart"></canvas>
+      <div id="topProductsEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center">
+        <i class="ph-duotone ph-ranking text-4xl text-slate-600 mb-2"></i>
+        <p class="text-slate-500 text-sm">Sin datos de productos</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ CHARTS ROW 2 ═══════════════════════════ -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 mt-3 md:mt-4">
+  
+  <!-- DOUGHNUT - Distribución de Márgenes -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-9 h-9 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center border border-rose-500/10">
+        <i class="ph-fill ph-percent text-lg"></i>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-white">Distribución de Márgenes</h4>
+        <p class="text-[10px] text-slate-500">Clasificación de productos por rango de margen</p>
+      </div>
+    </div>
+    <div class="relative h-[250px] flex items-center justify-center">
+      <canvas id="marginDoughnutChart"></canvas>
+      <div id="marginChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center">
+        <i class="ph-duotone ph-chart-donut text-4xl text-slate-600 mb-2"></i>
+        <p class="text-slate-500 text-sm">Sin datos de márgenes</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BAR Chart - Categoría Inversión vs Venta -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-9 h-9 rounded-xl bg-teal-500/15 text-teal-400 flex items-center justify-center border border-teal-500/10">
+        <i class="ph-fill ph-chart-bar text-lg"></i>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-white">Inversión vs Valor Venta</h4>
+        <p class="text-[10px] text-slate-500">Comparativa por categoría</p>
+      </div>
+    </div>
+    <div class="relative h-[250px]">
+      <canvas id="catCompareChart"></canvas>
+      <div id="catCompareEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center">
+        <i class="ph-duotone ph-chart-bar text-4xl text-slate-600 mb-2"></i>
+        <p class="text-slate-500 text-sm">Sin datos comparativos</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ALERTS & TABLES ═══════════════════════════ -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 mt-3 md:mt-4">
+  
+  <!-- Alertas de Stock -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-red-500/15 text-red-400 flex items-center justify-center border border-red-500/10">
+          <i class="ph-fill ph-warning text-lg"></i>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-white">Alertas de Stock</h4>
+          <p class="text-[10px] text-slate-500">Productos que requieren atención</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs bg-red-500/10 text-red-400 font-bold px-2.5 py-1 rounded-lg border border-red-500/20" id="alert-count">0</span>
+      </div>
+    </div>
+    <div class="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar" id="stock-alerts-container">
+      <div class="flex flex-col items-center justify-center py-8 text-center" id="no-alerts">
+        <i class="ph-duotone ph-check-circle text-3xl text-emerald-500 mb-2"></i>
+        <p class="text-sm text-slate-400 font-medium">¡Todo en orden!</p>
+        <p class="text-xs text-slate-600">No hay alertas de stock</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actividad Reciente -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center border border-blue-500/10">
+        <i class="ph-fill ph-clock-countdown text-lg"></i>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-white">Últimos Productos Registrados</h4>
+        <p class="text-[10px] text-slate-500">Actividad reciente del inventario</p>
+      </div>
+    </div>
+    <div class="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar" id="recent-activity-container">
+      <div class="flex flex-col items-center justify-center py-8 text-center" id="no-recent">
+        <i class="ph-duotone ph-package text-3xl text-slate-600 mb-2"></i>
+        <p class="text-sm text-slate-400 font-medium">Sin actividad reciente</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ VENTAS KPIs ═══════════════════════════ -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4 mt-3 md:mt-4">
+  
+  <!-- Ventas Hoy -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden group card-hover cursor-pointer" onclick="window.location.href='/ventas'">
+    <div class="absolute -right-6 -top-6 w-28 h-28 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/15 transition-all"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-lg border border-emerald-500/10">
+        <i class="ph-fill ph-shopping-cart"></i>
+      </div>
+      <div>
+        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Ventas Hoy</p>
+        <p class="text-[10px] text-slate-600 mt-0.5" id="dash-sales-today-count">-- transacciones</p>
+      </div>
+    </div>
+    <h3 class="text-2xl font-bold text-white tracking-tight" id="dash-sales-today">
+      <span class="skeleton-text w-28 h-8"></span>
+    </h3>
+    <p class="text-xs text-emerald-400/70 mt-1 flex items-center gap-1" id="dash-sales-today-profit">
+      <i class="ph ph-trend-up text-sm"></i> Ganancia: --
+    </p>
+  </div>
+
+  <!-- Ventas Semana -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden group card-hover cursor-pointer" onclick="window.location.href='/ventas'">
+    <div class="absolute -right-6 -top-6 w-28 h-28 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/15 transition-all"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-lg border border-blue-500/10">
+        <i class="ph-fill ph-calendar-dots"></i>
+      </div>
+      <div>
+        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Ventas Semana</p>
+        <p class="text-[10px] text-slate-600 mt-0.5" id="dash-sales-week-count">-- transacciones</p>
+      </div>
+    </div>
+    <h3 class="text-2xl font-bold text-white tracking-tight" id="dash-sales-week">
+      <span class="skeleton-text w-28 h-8"></span>
+    </h3>
+    <p class="text-xs text-blue-400/70 mt-1 flex items-center gap-1" id="dash-sales-week-profit">
+      <i class="ph ph-trend-up text-sm"></i> Ganancia: --
+    </p>
+  </div>
+
+  <!-- Ventas Mes -->
+  <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden group card-hover cursor-pointer" onclick="window.location.href='/ventas'">
+    <div class="absolute -right-6 -top-6 w-28 h-28 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/15 transition-all"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-lg border border-purple-500/10">
+        <i class="ph-fill ph-chart-line-up"></i>
+      </div>
+      <div>
+        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Ventas Mes</p>
+        <p class="text-[10px] text-slate-600 mt-0.5" id="dash-sales-month-count">-- transacciones</p>
+      </div>
+    </div>
+    <h3 class="text-2xl font-bold text-white tracking-tight" id="dash-sales-month">
+      <span class="skeleton-text w-28 h-8"></span>
+    </h3>
+    <p class="text-xs text-purple-400/70 mt-1 flex items-center gap-1" id="dash-sales-month-profit">
+      <i class="ph ph-trend-up text-sm"></i> Ganancia: --
+    </p>
+  </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>

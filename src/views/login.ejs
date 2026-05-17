@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Login - Admin Lunele</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .input-field {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(100, 116, 139, 0.4);
+      border-radius: 0.75rem;
+      padding: 0.8rem 1rem 0.8rem 2.75rem;
+      color: white;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+      outline: none;
+    }
+    .input-field:focus {
+      border-color: rgba(129, 140, 248, 0.6);
+      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+    }
+    .input-field::placeholder { color: rgba(148, 163, 184, 0.5); }
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+      transition: all 0.2s;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-entry { animation: fadeInUp 0.5s ease-out; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+  <!-- Background decoration -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute -top-40 -right-40 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-600/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="glass w-full max-w-md rounded-2xl p-8 shadow-2xl animate-entry relative z-10">
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-400 mb-4 shadow-lg shadow-indigo-500/25">
+        <i class="ph ph-cube text-3xl text-white"></i>
+      </div>
+      <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">Lunele</h1>
+      <p class="text-slate-400 text-sm mt-1">Sistema de Inventario</p>
+    </div>
+
+    <div id="loginSection" class="flex flex-col items-center space-y-5">
+      <p class="text-slate-300 text-center mb-4">Inicia sesión o regístrate con tu cuenta de Google</p>
+      
+      <div id="g_id_onload"
+           data-client_id="<%= clientId %>"
+           data-context="use"
+           data-ux_mode="popup"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false">
+      </div>
+
+      <div class="g_id_signin"
+           data-type="standard"
+           data-shape="rectangular"
+           data-theme="outline"
+           data-text="continue_with"
+           data-size="large"
+           data-logo_alignment="center">
+      </div>
+
+      <p id="errorMsg" class="text-red-400 text-sm text-center hidden mt-3"></p>
+    </div>
+
+    <!-- Sección de completar registro (oculta inicialmente) -->
+    <div id="companySection" class="hidden animate-entry">
+      <p class="text-slate-300 text-center mb-4 text-sm">Casi listo, <span id="userNameSpan" class="font-bold text-white"></span>. Ingresa el nombre de tu empresa para finalizar.</p>
+      <form id="companyForm" class="space-y-4">
+        <div class="relative">
+          <i class="ph ph-storefront absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10"></i>
+          <input type="text" id="companyName" required class="input-field" placeholder="Nombre de tu empresa">
+        </div>
+        
+        <button type="submit" id="submitCompanyBtn" class="btn-primary w-full text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2">
+          <i class="ph ph-check-circle text-lg"></i>
+          <span>Completar Registro</span>
+        </button>
+
+        <p id="companyErrorMsg" class="text-red-400 text-sm text-center hidden mt-3"></p>
+      </form>
+    </div>
+
+    <!-- Sección de invitación (oculta inicialmente) -->
+    <div id="invitationSection" class="hidden animate-entry">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-indigo-500/20 text-indigo-400 mb-3">
+          <i class="ph ph-envelope-open text-2xl"></i>
+        </div>
+        <h2 class="text-xl font-bold text-white mb-2">¡Tienes una invitación!</h2>
+        <p class="text-slate-300 text-sm">Has sido invitado a unirte a la empresa <span id="invitationCompanyName" class="font-bold text-white"></span> con el rol de <span id="invitationRole" class="font-semibold text-indigo-300"></span>.</p>
+      </div>
+      
+      <div class="flex flex-col gap-3">
+        <button id="btnAcceptInvitation" class="btn-primary w-full text-white font-semibold py-3 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2">
+          <i class="ph ph-check-circle text-lg"></i>
+          <span>Aceptar Invitación</span>
+        </button>
+        <button id="btnRejectInvitation" class="w-full text-slate-400 font-semibold py-3 px-4 rounded-xl border border-slate-700/50 hover:bg-slate-800/50 hover:text-white transition-colors flex items-center justify-center gap-2">
+          <i class="ph ph-x-circle text-lg"></i>
+          <span>Rechazar y crear mi propia empresa</span>
+        </button>
+      </div>
+      <p id="invitationErrorMsg" class="text-red-400 text-sm text-center hidden mt-3"></p>
+    </div>
+
+  </div>
+
+  <script>
+    let currentGoogleCredential = null;
+
+    async function handleCredentialResponse(response) {
+      currentGoogleCredential = response.credential;
+      const errorMsg = document.getElementById('errorMsg');
+      errorMsg.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: currentGoogleCredential })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          window.location.href = '/';
+        } else if (data.requiresRegistration) {
+          // Ocultar login, mostrar form de empresa
+          document.getElementById('loginSection').classList.add('hidden');
+          document.getElementById('companySection').classList.remove('hidden');
+          document.getElementById('userNameSpan').textContent = data.user.name;
+        } else if (data.requiresInvitationAcceptance) {
+          // Ocultar login, mostrar invitacion
+          document.getElementById('loginSection').classList.add('hidden');
+          document.getElementById('invitationSection').classList.remove('hidden');
+          document.getElementById('invitationCompanyName').textContent = data.invitation.companyName;
+          document.getElementById('invitationRole').textContent = data.invitation.role;
+        } else {
+          errorMsg.textContent = data.error || 'Error al iniciar sesión';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Error de conexión';
+        errorMsg.classList.remove('hidden');
+      }
+    }
+
+    // Funciones para manejar la invitación
+    document.getElementById('btnAcceptInvitation').addEventListener('click', async () => {
+      await processInvitation({ acceptInvitation: true });
+    });
+
+    document.getElementById('btnRejectInvitation').addEventListener('click', async () => {
+      if (confirm('Si rechazas la invitación, se eliminará tu acceso a la empresa y deberás crear la tuya. ¿Estás seguro?')) {
+        await processInvitation({ rejectInvitation: true });
+      }
+    });
+
+    async function processInvitation(payload) {
+      const errorMsg = document.getElementById('invitationErrorMsg');
+      errorMsg.classList.add('hidden');
+      
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            credential: currentGoogleCredential,
+            ...payload
+          })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          window.location.href = '/';
+        } else if (data.requiresRegistration) {
+          // Si rechazó, ahora le pedimos que cree su empresa
+          document.getElementById('invitationSection').classList.add('hidden');
+          document.getElementById('companySection').classList.remove('hidden');
+          document.getElementById('userNameSpan').textContent = data.user.name;
+        } else {
+          errorMsg.textContent = data.error || 'Error al procesar invitación';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Error de conexión';
+        errorMsg.classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('companyForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const companyName = document.getElementById('companyName').value;
+      const errorMsg = document.getElementById('companyErrorMsg');
+      const submitBtn = document.getElementById('submitCompanyBtn');
+      
+      errorMsg.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> <span>Guardando...</span>';
+
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            credential: currentGoogleCredential,
+            companyName: companyName
+          })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          window.location.href = '/';
+        } else {
+          errorMsg.textContent = data.error || 'Error al crear empresa';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Error de conexión';
+        errorMsg.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="ph ph-check-circle text-lg"></i> <span>Completar Registro</span>';
+      }
+    });
+  </script>
+</body>
+</html>

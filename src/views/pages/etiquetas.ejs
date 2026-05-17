@@ -1,0 +1,155 @@
+<% layout('layout') -%>
+<header class="flex flex-col md:flex-row md:justify-between md:items-end mb-6 gap-4">
+  <div>
+    <h2 class="text-2xl md:text-3xl font-bold text-white mb-1">Etiquetas</h2>
+    <p class="text-slate-400 text-sm">Crea, gestiona y asigna etiquetas a tus productos</p>
+  </div>
+  <button onclick="openCreateTagModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-5 py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-transform active:scale-95 font-medium shrink-0">
+    <i class="ph ph-plus text-lg"></i> Nueva Etiqueta
+  </button>
+</header>
+
+<!-- Tags Grid -->
+<div id="tagsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+  <div class="col-span-full flex justify-center py-20"><i class="ph ph-spinner animate-spin text-4xl text-indigo-500"></i></div>
+</div>
+
+<!-- Bulk Assignment Section -->
+<div class="mt-10">
+  <div class="flex flex-col md:flex-row md:justify-between md:items-end mb-6 gap-4">
+    <div>
+      <h3 class="text-xl md:text-2xl font-bold text-white mb-1 flex items-center gap-2">
+        <i class="ph-fill ph-stack text-indigo-400"></i> Asignación Masiva
+      </h3>
+      <p class="text-slate-400 text-sm">Selecciona productos y asígnales una etiqueta de forma rápida</p>
+    </div>
+  </div>
+
+  <!-- Step 1: Select Tag -->
+  <div class="glass-card rounded-3xl p-5 md:p-6 border border-slate-700/50 mb-4">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold shrink-0">1</div>
+      <p class="text-sm font-bold text-white">Seleccionar Etiqueta</p>
+    </div>
+    <div class="flex flex-wrap gap-2" id="bulkTagSelector">
+      <!-- rendered dynamically -->
+    </div>
+    <div id="bulkSelectedTagPreview" class="mt-3 hidden">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm font-bold" id="bulkSelectedTagChip"></div>
+    </div>
+  </div>
+
+  <!-- Step 2: Select Products -->
+  <div class="glass-card rounded-3xl p-5 md:p-6 border border-slate-700/50 mb-4">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold shrink-0">2</div>
+        <p class="text-sm font-bold text-white">Seleccionar Productos</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleSelectAll()" id="selectAllBtn" class="text-xs font-semibold text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition-colors">
+          Seleccionar Todo
+        </button>
+        <span class="text-xs text-slate-500 font-semibold" id="selectedCount">0 seleccionados</span>
+      </div>
+    </div>
+
+    <!-- Search inside bulk -->
+    <div class="relative mb-4">
+      <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+      <input type="text" id="bulkSearchInput" placeholder="Buscar producto..." class="w-full h-[44px] bg-slate-800/60 border border-slate-700/50 rounded-xl pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-slate-500 text-white">
+    </div>
+
+    <div id="bulkProductList" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto no-scrollbar">
+      <!-- rendered dynamically -->
+    </div>
+  </div>
+
+  <!-- Step 3: Apply -->
+  <div class="flex justify-end">
+    <button onclick="applyBulkTag()" id="applyBulkBtn" class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl px-8 py-3 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all active:scale-95 font-bold" disabled>
+      <i class="ph-bold ph-check"></i> Aplicar Etiqueta a Seleccionados
+    </button>
+  </div>
+</div>
+
+<!-- Create/Edit Tag Modal -->
+<div id="createTagModal" class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4">
+  <div class="bg-[#1e293b] w-full md:w-[420px] rounded-t-3xl md:rounded-3xl max-h-[90vh] flex flex-col transform transition-transform translate-y-full md:translate-y-0 duration-300 shadow-2xl border border-slate-700/50" id="createTagModalContent">
+    <div class="px-6 py-5 border-b border-slate-700/50 flex justify-between items-center sticky top-0 bg-[#1e293b] rounded-t-3xl z-10">
+      <h2 id="tagModalTitle" class="text-xl font-bold text-white flex items-center gap-2">
+        <i class="ph-fill ph-bookmark-simple text-indigo-400"></i> Nueva Etiqueta
+      </h2>
+      <button onclick="closeCreateTagModal()" class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+        <i class="ph ph-x text-lg"></i>
+      </button>
+    </div>
+    <form id="tagForm" class="p-6 flex flex-col gap-5">
+      <input type="hidden" id="editTagId">
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nombre de la Etiqueta</label>
+        <input type="text" id="tagNameInput" required class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600" placeholder="Ej. Oferta, Nuevo, Popular">
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Color</label>
+        <div class="flex items-center gap-4">
+          <input type="color" id="tagColorInput" value="#6366f1" class="w-14 h-14 p-0 border-2 border-slate-700 rounded-2xl cursor-pointer bg-transparent shadow-inner">
+          <div class="flex-1">
+            <div class="flex flex-wrap gap-2" id="colorPresets">
+              <!-- color preset chips -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Preview -->
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Vista Previa</label>
+        <div class="bg-slate-800/50 rounded-2xl p-4 flex items-center justify-center border border-slate-700/50">
+          <div id="tagPreviewChip" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white shadow-lg" style="background-color: #6366f1;">
+            <i class="ph-fill ph-bookmark-simple"></i> <span id="tagPreviewLabel">Etiqueta</span>
+          </div>
+        </div>
+      </div>
+      <div class="pt-4 flex gap-3">
+        <button type="button" onclick="closeCreateTagModal()" class="flex-1 py-3.5 px-4 rounded-xl font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">Cancelar</button>
+        <button type="submit" id="tagSubmitBtn" class="flex-1 py-3.5 px-4 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/40 transition-transform active:scale-95 flex justify-center items-center gap-2">
+          <i class="ph-bold ph-check"></i> <span>Guardar</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tag Options Bottom Sheet -->
+<div id="tagOptionsModal" class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-md flex items-end justify-center p-0 md:p-4 md:items-center">
+  <div class="bg-[#1e293b] w-full md:w-[400px] rounded-t-3xl md:rounded-3xl max-h-[90vh] flex flex-col transform transition-transform translate-y-full md:translate-y-0 duration-300 shadow-2xl border border-slate-700/50" id="tagOptionsContent">
+    <div class="px-6 py-5 border-b border-slate-700/50 flex justify-between items-center sticky top-0 bg-[#1e293b] rounded-t-3xl z-10">
+      <h2 class="text-xl font-bold text-white flex items-center gap-2" id="tagOptionsTitle">
+        Opciones
+      </h2>
+      <button onclick="closeTagOptions()" class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+        <i class="ph ph-x text-lg"></i>
+      </button>
+    </div>
+    <div class="p-4 flex flex-col gap-2">
+      <button id="btnEditTag" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-800 transition-colors text-left group">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+          <i class="ph-fill ph-pencil-simple text-lg"></i>
+        </div>
+        <div>
+          <p class="text-white font-bold text-sm">Editar Etiqueta</p>
+          <p class="text-slate-400 text-[11px] mt-0.5">Modificar nombre y color</p>
+        </div>
+      </button>
+      <button id="btnViewTagProducts" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-800 transition-colors text-left group">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+          <i class="ph-fill ph-package text-lg"></i>
+        </div>
+        <div>
+          <p class="text-white font-bold text-sm">Ver Productos</p>
+          <p class="text-slate-400 text-[11px] mt-0.5">Ir al inventario filtrado</p>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
