@@ -118,7 +118,7 @@ exports.googleAuth = async (req, res) => {
             success: false,
             requiresInvitationAcceptance: true,
             invitation: {
-              companyName: user.company.name,
+              companyName: user.company?.name || 'Desconocida',
               role: user.role
             },
             user: { name, email, picture }
@@ -135,7 +135,7 @@ exports.googleAuth = async (req, res) => {
     }
   } catch (error) {
     console.error('Error in Google Auth:', error);
-    res.status(400).json({ success: false, error: 'Fallo al autenticar con Google' });
+    res.status(400).json({ success: false, error: `Fallo al autenticar con Google: ${error.message}` });
   }
 };
 

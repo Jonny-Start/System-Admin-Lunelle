@@ -28,7 +28,7 @@ app.set('views', path.join(__dirname, 'src/views'));
 // pero manteniendo un buen nivel de seguridad base.
 app.use(helmet({
   contentSecurityPolicy: false,
-  crossOriginOpenerPolicy: false,
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
 }));
 
 // Middlewares estándar
