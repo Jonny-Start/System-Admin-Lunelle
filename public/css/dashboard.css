@@ -82,14 +82,17 @@
     }
 
     /* Chart Mode Toggle Buttons */
-    .chart-mode-btn {
+    .chart-mode-btn,
+    .analysis-mode-btn {
       color: #64748b;
       cursor: pointer;
     }
-    .chart-mode-btn:hover {
+    .chart-mode-btn:hover,
+    .analysis-mode-btn:hover {
       color: #cbd5e1;
     }
-    .chart-mode-btn.active {
+    .chart-mode-btn.active,
+    .analysis-mode-btn.active {
       background: rgba(99, 102, 241, 0.2);
       color: #a5b4fc;
       box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);

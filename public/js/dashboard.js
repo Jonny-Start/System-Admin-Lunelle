@@ -5,6 +5,7 @@
 let dashboardData = null;
 let chartInstances = {};
 let investmentFilters = { categories: [], tags: [] };
+let analysisMode = 'current'; // 'current' = bodega actual, 'historical' = todo lo comprado
 
 // ─── Helpers ───
 function fmtMoney(v) {
@@ -29,6 +30,7 @@ async function loadDashboard() {
     if (!json.success) throw new Error('API error');
     dashboardData = json.data;
     renderKPIs();
+    renderFinancialKPIs();
     renderInvestmentFilters();
     renderCharts();
     renderAlerts();
@@ -41,17 +43,73 @@ async function loadDashboard() {
   }
 }
 
-// ─── KPIs ───
+// ─── Analysis Mode Toggle ───
+function switchAnalysisMode(mode) {
+  analysisMode = mode;
+  document.querySelectorAll('.analysis-mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`analysis-mode-${mode}`).classList.add('active');
+
+  const desc = document.getElementById('analysis-mode-desc');
+  if (mode === 'current') {
+    desc.textContent = 'Mostrando inventario actual en bodega';
+  } else {
+    desc.textContent = 'Mostrando toda la inversión histórica (incluye vendidos)';
+  }
+
+  renderFinancialKPIs();
+  renderCharts();
+}
+
+// ─── KPIs Row 1 (no cambian por modo) ───
 function renderKPIs() {
   const k = dashboardData.kpis;
   animateValue('kpi-total-products', k.totalProducts);
   animateValue('kpi-total-stock', k.totalStock);
   animateValue('kpi-categories', k.totalCategories);
   animateValue('kpi-users', k.totalUsers);
-  document.getElementById('kpi-investment').textContent = fmtMoney(k.totalInvestment);
-  document.getElementById('kpi-sale-value').textContent = fmtMoney(k.totalSaleValue);
-  document.getElementById('kpi-potential-profit').textContent = fmtMoney(k.potentialProfit);
-  document.getElementById('kpi-avg-margin').textContent = k.avgMargin.toFixed(1);
+}
+
+// ─── KPIs Row 2 - Financieros (cambian según modo) ───
+function renderFinancialKPIs() {
+  const k = dashboardData.kpis;
+  const isCurrent = analysisMode === 'current';
+
+  const investment = isCurrent ? k.currentInvestment : k.historicalInvestment;
+  const saleValue  = isCurrent ? k.currentSaleValue  : k.historicalSaleValue;
+  const profit     = isCurrent ? k.currentProfit      : k.historicalProfit;
+  const margin     = isCurrent ? k.currentMargin      : k.historicalMargin;
+
+  document.getElementById('kpi-investment').textContent = fmtMoney(investment);
+  document.getElementById('kpi-sale-value').textContent = fmtMoney(saleValue);
+  document.getElementById('kpi-potential-profit').textContent = fmtMoney(profit);
+  document.getElementById('kpi-avg-margin').textContent = margin.toFixed(1);
+
+  // Actualizar títulos y descripciones según modo
+  const invTitle = document.getElementById('kpi-investment-title');
+  const invFormula = document.getElementById('kpi-investment-formula');
+  const saleTitle = document.getElementById('kpi-sale-title');
+  const saleDesc = document.getElementById('kpi-sale-desc');
+  const saleFormula = document.getElementById('kpi-sale-formula');
+  const profitTitle = document.getElementById('kpi-profit-title');
+  const profitFormula = document.getElementById('kpi-profit-formula');
+
+  if (isCurrent) {
+    invTitle.textContent = 'Inversión en Bodega';
+    invFormula.innerHTML = '<i class="ph ph-info text-sm"></i> Costo × stock actual';
+    saleTitle.textContent = 'Valor de Venta';
+    saleDesc.textContent = 'Si se vende todo el inventario';
+    saleFormula.innerHTML = '<i class="ph ph-trend-up text-sm"></i> Precio venta × stock actual';
+    profitTitle.textContent = 'Ganancia Potencial';
+    profitFormula.innerHTML = '<i class="ph ph-equals text-sm"></i> Valor venta − Inversión';
+  } else {
+    invTitle.textContent = 'Inversión Histórica';
+    invFormula.innerHTML = '<i class="ph ph-clock-counter-clockwise text-sm"></i> Costo × (stock + vendidos)';
+    saleTitle.textContent = 'Valor Total Generado';
+    saleDesc.textContent = 'Incluye stock actual y unidades vendidas';
+    saleFormula.innerHTML = '<i class="ph ph-trend-up text-sm"></i> Precio × (stock + vendidos)';
+    profitTitle.textContent = 'Ganancia Total';
+    profitFormula.innerHTML = '<i class="ph ph-equals text-sm"></i> Valor total − Inversión total';
+  }
 }
 
 function animateValue(id, end) {
@@ -73,7 +131,7 @@ function toggleInvestmentFilter() {
 }
 
 function renderInvestmentFilters() {
-  const cats = dashboardData.charts.categories;
+  const cats = dashboardData.charts.categoriesCurrent;
   const tags = dashboardData.charts.tags;
   const catC = document.getElementById('inv-filter-categories');
   const tagC = document.getElementById('inv-filter-tags');
@@ -94,7 +152,6 @@ function toggleInvFilter(type, id) {
   if (idx > -1) investmentFilters[type].splice(idx, 1);
   else investmentFilters[type].push(id);
 
-  // Update chip UI
   const cls = type === 'categories' ? 'inv-cat-chip' : 'inv-tag-chip';
   document.querySelectorAll(`.${cls}`).forEach(btn => {
     const active = investmentFilters[type].includes(btn.dataset.id);
@@ -109,7 +166,6 @@ function toggleInvFilter(type, id) {
 }
 
 function recalcInvestment() {
-  // Fetch all products and filter client-side
   fetch('/api/inventory').then(r => r.json()).then(json => {
     if (!json.success) return;
     let products = json.data;
@@ -139,6 +195,13 @@ function recalcInvestment() {
 
 // ─── Charts ───
 function renderCharts() {
+  const cats = analysisMode === 'current'
+    ? dashboardData.charts.categoriesCurrent
+    : dashboardData.charts.categoriesHistorical;
+
+  // Update chart data source
+  dashboardData.charts._activeCats = cats;
+
   renderCategoryPie('investment');
   renderTopProducts('investment');
   renderMarginDoughnut();
@@ -156,7 +219,7 @@ function switchCategoryChartMode(mode) {
 }
 
 function renderCategoryPie(mode) {
-  const cats = dashboardData.charts.categories;
+  const cats = dashboardData.charts._activeCats || dashboardData.charts.categoriesCurrent;
   const canvas = document.getElementById('categoryPieChart');
   const empty = document.getElementById('categoryPieEmpty');
 
@@ -203,7 +266,13 @@ function switchTopProductsMode(mode) {
 
 function renderTopProducts(mode) {
   const rankings = dashboardData.rankings;
-  const items = mode === 'investment' ? rankings.topValue : rankings.topMargin;
+  let items;
+  if (mode === 'investment') {
+    items = analysisMode === 'current' ? rankings.topValueCurrent : rankings.topValueHistorical;
+  } else {
+    items = rankings.topMargin;
+  }
+
   const canvas = document.getElementById('topProductsChart');
   const empty = document.getElementById('topProductsEmpty');
 
@@ -277,7 +346,7 @@ function renderMarginDoughnut() {
 }
 
 function renderCatCompare() {
-  const cats = dashboardData.charts.categories;
+  const cats = dashboardData.charts._activeCats || dashboardData.charts.categoriesCurrent;
   const canvas = document.getElementById('catCompareChart');
   const empty = document.getElementById('catCompareEmpty');
 
@@ -319,8 +388,15 @@ function renderAlerts() {
 
   document.getElementById('alert-count').textContent = all.length;
 
-  if (!all.length) { document.getElementById('no-alerts').style.display = 'flex'; return; }
-  document.getElementById('no-alerts').style.display = 'none';
+  if (!all.length) { 
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-8 text-center" id="no-alerts">
+        <i class="ph-duotone ph-check-circle text-3xl text-emerald-500 mb-2"></i>
+        <p class="text-sm text-slate-400 font-medium">¡Todo en orden!</p>
+        <p class="text-xs text-slate-600">No hay alertas de stock</p>
+      </div>`;
+    return;
+  }
 
   container.innerHTML = all.map(p => {
     const isOut = p.type === 'out';
@@ -346,8 +422,14 @@ function renderRecent() {
   const items = dashboardData.recent;
   const container = document.getElementById('recent-activity-container');
 
-  if (!items || !items.length) { document.getElementById('no-recent').style.display = 'flex'; return; }
-  document.getElementById('no-recent').style.display = 'none';
+  if (!items || !items.length) { 
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-8 text-center" id="no-recent">
+        <i class="ph-duotone ph-package text-3xl text-slate-600 mb-2"></i>
+        <p class="text-sm text-slate-400 font-medium">Sin actividad reciente</p>
+      </div>`;
+    return;
+  }
 
   container.innerHTML = items.map(p => {
     const catName = p.category?.name || 'Sin categoría';

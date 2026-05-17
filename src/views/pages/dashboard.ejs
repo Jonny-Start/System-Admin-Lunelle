@@ -78,8 +78,29 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════ ANALYSIS MODE TOGGLE ═══════════════════════════ -->
+<div class="mt-3 md:mt-4 flex items-center justify-between gap-3 flex-wrap">
+  <div class="flex items-center gap-2">
+    <div class="w-8 h-8 rounded-lg bg-indigo-500/15 text-indigo-400 flex items-center justify-center border border-indigo-500/10">
+      <i class="ph-fill ph-chart-pie-slice text-sm"></i>
+    </div>
+    <div>
+      <p class="text-xs font-bold text-white leading-tight">Análisis Financiero</p>
+      <p class="text-[10px] text-slate-500" id="analysis-mode-desc">Mostrando inventario actual en bodega</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-1 bg-slate-800/60 rounded-xl p-0.5 border border-slate-700/50">
+    <button onclick="switchAnalysisMode('current')" id="analysis-mode-current" class="analysis-mode-btn active text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+      <i class="ph-fill ph-warehouse text-xs"></i> Actual
+    </button>
+    <button onclick="switchAnalysisMode('historical')" id="analysis-mode-historical" class="analysis-mode-btn text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+      <i class="ph-fill ph-clock-counter-clockwise text-xs"></i> Histórico
+    </button>
+  </div>
+</div>
+
 <!-- ═══════════════════════════ KPI CARDS ROW 2 - FINANCIEROS ═══════════════════════════ -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mt-3 md:mt-4">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mt-3">
   
   <!-- Total Inversión (con filtros) -->
   <div class="glass-card rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden group card-hover" id="investment-card">
@@ -90,7 +111,7 @@
           <i class="ph-fill ph-vault"></i>
         </div>
         <div>
-          <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Inversión Total</p>
+          <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider" id="kpi-investment-title">Inversión en Bodega</p>
           <p class="text-[10px] text-slate-600 mt-0.5" id="investment-filter-label">Todos los productos</p>
         </div>
       </div>
@@ -101,8 +122,8 @@
     <h3 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1" id="kpi-investment">
       <span class="skeleton-text w-28 h-8"></span>
     </h3>
-    <p class="text-xs text-slate-500 flex items-center gap-1">
-      <i class="ph ph-info text-sm"></i> Costo unitario × stock actual
+    <p class="text-xs text-slate-500 flex items-center gap-1" id="kpi-investment-formula">
+      <i class="ph ph-info text-sm"></i> Costo × stock actual
     </p>
 
     <!-- Investment Filter Dropdown -->
@@ -122,14 +143,14 @@
         <i class="ph-fill ph-currency-dollar-simple"></i>
       </div>
       <div>
-        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Valor de Venta</p>
-        <p class="text-[10px] text-slate-600 mt-0.5">Si se vende todo el inventario</p>
+        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider" id="kpi-sale-title">Valor de Venta</p>
+        <p class="text-[10px] text-slate-600 mt-0.5" id="kpi-sale-desc">Si se vende todo el inventario</p>
       </div>
     </div>
     <h3 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1" id="kpi-sale-value">
       <span class="skeleton-text w-28 h-8"></span>
     </h3>
-    <p class="text-xs text-emerald-400/70 flex items-center gap-1">
+    <p class="text-xs text-emerald-400/70 flex items-center gap-1" id="kpi-sale-formula">
       <i class="ph ph-trend-up text-sm"></i> Precio venta × stock actual
     </p>
   </div>
@@ -142,14 +163,14 @@
         <i class="ph-fill ph-chart-line-up"></i>
       </div>
       <div>
-        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Ganancia Potencial</p>
-        <p class="text-[10px] text-slate-600 mt-0.5">Margen promedio: <span class="text-green-400 font-semibold" id="kpi-avg-margin">--</span>%</p>
+        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider" id="kpi-profit-title">Ganancia Potencial</p>
+        <p class="text-[10px] text-slate-600 mt-0.5">Margen: <span class="text-green-400 font-semibold" id="kpi-avg-margin">--</span>%</p>
       </div>
     </div>
     <h3 class="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1" id="kpi-potential-profit">
       <span class="skeleton-text w-28 h-8"></span>
     </h3>
-    <p class="text-xs text-green-400/70 flex items-center gap-1">
+    <p class="text-xs text-green-400/70 flex items-center gap-1" id="kpi-profit-formula">
       <i class="ph ph-equals text-sm"></i> Valor venta − Inversión
     </p>
   </div>

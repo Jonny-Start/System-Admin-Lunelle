@@ -285,7 +285,7 @@ function renderProducts(productsToRender = currentProducts) {
     const stockIcon = isLowStock ? 'ph-warning-circle' : 'ph-check-circle';
     const categoryName = getCategoryName(product);
     const imageHtml = product.fileId ? `<img src="/api/drive-image/${product.fileId}" class="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover bg-slate-800 shrink-0 border border-slate-700/50" onerror="this.outerHTML='<div class=\\'w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-500 shrink-0 border border-slate-700/50\\'><i class=\\'ph ph-image text-3xl\\'></i></div>'">` : `<div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-500 shrink-0 border border-slate-700/50"><i class="ph ph-image text-3xl"></i></div>`;
-    const actionButtons = `<div class="flex gap-2 w-full mt-4 pt-4 border-t border-slate-700/30"><button onclick="editProduct('${product._id}')" class="flex-1 py-2 flex items-center justify-center gap-2 text-xs font-bold text-slate-300 hover:text-indigo-400 bg-slate-800/50 hover:bg-indigo-500/10 rounded-xl transition-colors border border-slate-700/50"><i class="ph-bold ph-pencil-simple text-sm"></i> Editar</button>${userRole === 'Administrador' ? `<button onclick="deleteProduct('${product._id}')" class="flex-1 py-2 flex items-center justify-center gap-2 text-xs font-bold text-slate-300 hover:text-red-400 bg-slate-800/50 hover:bg-red-500/10 rounded-xl transition-colors border border-slate-700/50"><i class="ph-bold ph-trash text-sm"></i> Eliminar</button>` : ''}</div>`;
+    const actionButtons = `<div class="flex gap-2 w-full mt-4 pt-4 border-t border-slate-700/30"><button onclick="editProduct('${product._id}')" class="flex-1 py-2 flex items-center justify-center gap-2 text-xs font-bold text-slate-300 hover:text-indigo-400 bg-slate-800/50 hover:bg-indigo-500/10 rounded-xl transition-colors border border-slate-700/50"><i class="ph-bold ph-pencil-simple text-sm"></i> Editar</button>${['Super Admin', 'Administrador'].includes(userRole) ? `<button onclick="deleteProduct('${product._id}')" class="flex-1 py-2 flex items-center justify-center gap-2 text-xs font-bold text-slate-300 hover:text-red-400 bg-slate-800/50 hover:bg-red-500/10 rounded-xl transition-colors border border-slate-700/50"><i class="ph-bold ph-trash text-sm"></i> Eliminar</button>` : ''}</div>`;
     let tagBadgeHtml = '';
     if (product.tag && product.tag.name) {
       tagBadgeHtml = `<div class="absolute top-0 right-0 overflow-hidden w-24 h-24 pointer-events-none rounded-tr-3xl z-10"><div class="absolute top-[25px] right-[-45px] rotate-45 w-[160px] text-center text-[8px] md:text-[9px] font-black py-1 text-white shadow-md uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis px-3" style="background-color: ${product.tag.color || '#6366f1'};" title="${product.tag.name}">${product.tag.name}</div></div>`;
@@ -298,6 +298,7 @@ function renderProducts(productsToRender = currentProducts) {
 function openProductModal(product = null) {
   const modal = document.getElementById('productModal');
   const content = document.getElementById('modalContent');
+  const deleteBtn = document.getElementById('modalDeleteBtn');
   document.getElementById('productForm').reset();
   document.getElementById('productId').value = '';
   document.getElementById('imagePreview').classList.add('hidden');
@@ -331,10 +332,18 @@ function openProductModal(product = null) {
     if(product.tag) selectTag(product.tag._id, product.tag.name, product.tag.color);
     document.getElementById('minStock').value = product.minStock;
     if (product.fileId) { document.getElementById('imagePreview').src = `/api/drive-image/${product.fileId}`; document.getElementById('imagePreview').classList.remove('hidden'); document.getElementById('imagePlaceholder').classList.add('hidden'); }
+    
+    // Show delete button in modal if user has permissions
+    if (['Super Admin', 'Administrador'].includes(userRole)) {
+      if (deleteBtn) deleteBtn.classList.remove('hidden');
+    } else {
+      if (deleteBtn) deleteBtn.classList.add('hidden');
+    }
   } else {
     document.getElementById('modalTitle').innerHTML = '<i class="ph-fill ph-package text-indigo-400"></i> Nuevo Producto';
     document.getElementById('provider').value = '';
     document.getElementById('selectedProviderId').value = '';
+    if (deleteBtn) deleteBtn.classList.add('hidden');
   }
   modal.classList.remove('hidden');
   setTimeout(() => content.classList.remove('translate-y-full'), 10);
@@ -403,13 +412,32 @@ async function handleFormSubmit(e) {
 }
 
 async function deleteProduct(id) {
-  if (!confirm('¿Estás seguro de eliminar este producto? Esta acción es irreversible.')) return;
+  if (!confirm('¿Estás seguro de eliminar este producto? Esta acción es irreversible.')) return false;
   try {
     const res = await fetch(`/api/inventory/${id}`, { method: 'DELETE' });
     const data = await res.json();
-    if (data.success) { showToast('Producto eliminado del sistema'); fetchProducts(); }
-    else showToast(data.error || 'Error al eliminar', 'error');
-  } catch (error) { showToast('Error de conexión', 'error'); }
+    if (data.success) { 
+      showToast('Producto eliminado del sistema'); 
+      fetchProducts(); 
+      return true;
+    }
+    else {
+      showToast(data.error || 'Error al eliminar', 'error');
+      return false;
+    }
+  } catch (error) { 
+    showToast('Error de conexión', 'error'); 
+    return false;
+  }
+}
+
+async function deleteProductFromModal() {
+  const id = document.getElementById('productId').value;
+  if (!id) return;
+  const success = await deleteProduct(id);
+  if (success) {
+    closeProductModal();
+  }
 }
 
 // -- Custom Searchable Dropdown --
@@ -479,8 +507,8 @@ function selectProvider(id, name) {
 }
 
 document.addEventListener('click', (e) => { 
-  if (catDropdownOpen && !e.target.closest('#category').parentNode.parentNode) closeCatDropdown(); 
-  if (provDropdownOpen && !e.target.closest('#provider').parentNode.parentNode) closeProvDropdown(); 
+  if (catDropdownOpen && !e.target.closest('#category') && !e.target.closest('#catDropdown')) closeCatDropdown(); 
+  if (provDropdownOpen && !e.target.closest('#provider') && !e.target.closest('#provDropdown')) closeProvDropdown(); 
 });
 
 // -- Init --

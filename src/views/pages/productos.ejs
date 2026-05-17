@@ -30,7 +30,7 @@
 <div id="productModal" class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4">
   <div class="bg-[#1e293b] w-full md:w-[550px] rounded-t-3xl md:rounded-3xl max-h-[90vh] md:max-h-[85vh] flex flex-col transform transition-transform translate-y-full md:translate-y-0 duration-300 shadow-2xl border border-slate-700/50" id="modalContent">
     
-    <div class="px-6 py-5 border-b border-slate-700/50 flex justify-between items-center sticky top-0 bg-[#1e293b] rounded-t-3xl z-10">
+    <div class="px-6 py-5 border-b border-slate-700/50 flex justify-between items-center sticky top-0 bg-[#1e293b] rounded-t-3xl z-40">
       <h2 id="modalTitle" class="text-xl font-bold text-white flex items-center gap-2">
         <i class="ph-fill ph-package text-indigo-400"></i> Nuevo Producto
       </h2>
@@ -46,14 +46,14 @@
       
       <div class="flex justify-center mb-2 relative w-full px-8">
         <div onclick="document.getElementById('productImage').click()" class="w-48 h-48 mx-auto rounded-3xl bg-slate-800/80 border-2 border-dashed border-slate-600 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-slate-800 transition-all relative overflow-hidden group shadow-inner">
-          <img id="imagePreview" class="absolute inset-0 w-full h-full object-cover hidden transition-transform group-hover:scale-105 z-10">
+          <img id="imagePreview" class="absolute inset-0 w-full h-full object-cover hidden transition-transform group-hover:scale-105 z-20">
           
           <div id="imagePlaceholder" class="flex flex-col items-center justify-center z-10 transition-opacity">
             <i class="ph ph-camera-plus text-4xl text-slate-400 group-hover:text-indigo-400 transition-colors"></i>
             <span class="text-xs font-bold text-slate-400 mt-2 group-hover:text-indigo-400 uppercase tracking-wider transition-colors">Añadir Foto</span>
           </div>
           
-          <div id="imageTagOverlay" onclick="event.stopPropagation(); openTagModal()" class="absolute top-3 left-3 z-20 flex items-center justify-center px-2 py-1 rounded-md shadow border border-white/20 bg-slate-900/50 hover:bg-slate-900/80 cursor-pointer backdrop-blur-md transition-all min-w-[70px]">
+          <div id="imageTagOverlay" onclick="event.stopPropagation(); openTagModal()" class="absolute top-3 left-3 z-30 flex items-center justify-center px-2 py-1 rounded-md shadow border border-white/20 bg-slate-900/50 hover:bg-slate-900/80 cursor-pointer backdrop-blur-md transition-all min-w-[70px]">
             <span id="imageTagText" class="text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1 drop-shadow-md">
               <i class="ph ph-tag drop-shadow-md"></i> <span id="imageTagLabel">Etiqueta</span>
             </span>
@@ -100,7 +100,7 @@
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Descripción Corta <span class="text-slate-500 font-normal lowercase">(Opcional)</span></label>
-          <textarea id="description" rows="1" class="w-full h-[46px] bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none transition-all placeholder-slate-600" placeholder="Detalles del producto..."></textarea>
+          <input type="text" id="description" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600" placeholder="Detalles del producto...">
         </div>
       </div>
 
@@ -144,6 +144,9 @@
       <div class="h-5 shrink-0"></div>
 
       <div class="py-3 px-4 sticky bottom-0 bg-slate-900/80 backdrop-blur-xl mt-auto flex items-center gap-3 border-t border-slate-700/50 rounded-t-2xl rounded-b-3xl -mx-6 -mb-6">
+        <button type="button" id="modalDeleteBtn" onclick="deleteProductFromModal()" class="hidden py-2.5 px-4 rounded-xl font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors border border-red-500/30 shadow-sm flex items-center justify-center gap-2 shrink-0">
+          <i class="ph-bold ph-trash"></i> <span>Eliminar</span>
+        </button>
         <button type="button" onclick="closeProductModal()" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-slate-300 bg-slate-800/80 hover:bg-slate-700 transition-colors border border-slate-600/50 shadow-sm">Cancelar</button>
         <button type="submit" id="submitBtn" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-transform active:scale-95 flex justify-center items-center gap-2 border border-indigo-500/80">
           <i class="ph-bold ph-check"></i> <span>Guardar</span>
@@ -181,7 +184,7 @@
 <!-- Filter Modal -->
 <div id="filterModal" class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4">
   <div class="bg-[#1e293b] w-full md:w-[480px] rounded-t-3xl md:rounded-3xl max-h-[90vh] flex flex-col transform transition-transform translate-y-full md:translate-y-0 duration-300 shadow-2xl border border-slate-700/50" id="filterModalContent">
-    <div class="px-6 py-5 border-b border-slate-700/50 flex justify-between items-center sticky top-0 bg-[#1e293b] rounded-t-3xl z-10">
+    <div class="px-6 py-5 border-b border-slate-700/50 flex justify-between items-center sticky top-0 bg-[#1e293b] rounded-t-3xl z-40">
       <h2 class="text-xl font-bold text-white flex items-center gap-2">
         <i class="ph-fill ph-faders text-indigo-400"></i> Filtros de Inventario
       </h2>
