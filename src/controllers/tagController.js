@@ -73,10 +73,16 @@ exports.deleteTag = async (req, res) => {
     }
 
     // Remove tag reference from all products that use it
-    await Product.updateMany(
-      { tag: tag._id, company: req.user.company },
-      { $unset: { tag: 1 } }
-    );
+    const productsToUpdate = await Product.find({
+      company: req.user.company,
+      $or: [ { tag: tag._id }, { tags: tag._id } ]
+    });
+
+    for (let prod of productsToUpdate) {
+      prod.tags = (prod.tags || []).filter(t => t && t.toString() !== tag._id.toString());
+      prod.tag = prod.tags.length > 0 ? prod.tags[0] : null;
+      await prod.save();
+    }
 
     await tag.deleteOne();
     res.status(200).json({ success: true, data: {} });
@@ -99,8 +105,8 @@ exports.bulkAssignTag = async (req, res) => {
 
     // If tagId is null, remove tag from products
     const updateOp = tagId
-      ? { $set: { tag: tagId } }
-      : { $unset: { tag: 1 } };
+      ? { $set: { tag: tagId, tags: [tagId] } }
+      : { $set: { tags: [] }, $unset: { tag: 1 } };
 
     const result = await Product.updateMany(
       { _id: { $in: productIds }, company: req.user.company },

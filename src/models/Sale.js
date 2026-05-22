@@ -32,6 +32,10 @@ const saleItemSchema = new mongoose.Schema({
   profit: {
     type: Number,
     required: true  // (unitPrice - unitCost) * quantity
+  },
+  color: {
+    name: { type: String, default: null },
+    hex: { type: String, default: null }
   }
 });
 

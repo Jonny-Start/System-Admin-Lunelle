@@ -367,24 +367,44 @@
       const dropdown = document.getElementById('qsProductDropdown');
       if (!q) { dropdown.classList.add('hidden'); return; }
 
-      const cartIds = qsCart.map(c => c.product);
+      const cartIds = qsCart.map(c => c.product + (c.colorName || ''));
       const matches = qsProducts.filter(p =>
-        !cartIds.includes(p._id) &&
-        (p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q)))
+        (p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))) &&
+        p.stock > 0
       ).slice(0, 8);
 
       if (!matches.length) {
         dropdown.innerHTML = '<div class="p-4 text-center text-sm text-slate-500">Sin resultados</div>';
       } else {
-        dropdown.innerHTML = matches.map(p => `
+        dropdown.innerHTML = matches.map(p => {
+          const hasColors = p.colors && p.colors.length > 0;
+          const colorDots = hasColors ? `<div class="flex items-center gap-0.5 mt-0.5">${p.colors.filter(c => c.stock > 0).map(c => `<span class="w-2.5 h-2.5 rounded-full border border-white/20" style="background-color: ${c.hex};" title="${c.name}: ${c.stock}"></span>`).join('')}</div>` : '';
+          if (hasColors) {
+            // Show individual color options
+            return p.colors.filter(c => c.stock > 0).map(c => {
+              const alreadyInCart = qsCart.some(ci => ci.product === p._id && ci.colorName === c.name);
+              if (alreadyInCart) return '';
+              return `
+              <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="addToQsCart('${p._id}', '${c.name.replace(/'/g, "\\'")}')">  
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm text-white font-medium truncate flex items-center gap-2">${p.name} <span class="w-3 h-3 rounded-full border border-white/20 shrink-0" style="background-color: ${c.hex};"></span> <span class="text-[10px] text-slate-400">${c.name}</span></p>
+                  <p class="text-[10px] text-slate-500">Stock: ${c.stock} · $${p.salePrice.toLocaleString('es-CO')}</p>
+                </div>
+                <i class="ph ph-plus-circle text-lg text-emerald-400 shrink-0 ml-2"></i>
+              </div>`;
+            }).join('');
+          }
+          const alreadyInCart = qsCart.some(ci => ci.product === p._id && !ci.colorName);
+          if (alreadyInCart) return '';
+          return `
           <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-700/50 cursor-pointer transition-colors" onclick="addToQsCart('${p._id}')">
             <div class="min-w-0 flex-1">
               <p class="text-sm text-white font-medium truncate">${p.name}</p>
               <p class="text-[10px] text-slate-500">Stock: ${p.stock} · $${p.salePrice.toLocaleString('es-CO')}</p>
             </div>
             <i class="ph ph-plus-circle text-lg text-emerald-400 shrink-0 ml-2"></i>
-          </div>
-        `).join('');
+          </div>`;
+        }).join('');
       }
       dropdown.classList.remove('hidden');
     });
@@ -397,17 +417,29 @@
       }
     });
 
-    function addToQsCart(productId) {
+    function addToQsCart(productId, colorName = null) {
       const product = qsProducts.find(p => p._id === productId);
       if (!product) return;
+
+      let itemStock = product.stock;
+      let colorHex = null;
+
+      if (colorName && product.colors && product.colors.length > 0) {
+        const colorEntry = product.colors.find(c => c.name === colorName);
+        if (!colorEntry || colorEntry.stock <= 0) return;
+        itemStock = colorEntry.stock;
+        colorHex = colorEntry.hex;
+      }
 
       qsCart.push({
         product: product._id,
         name: product.name,
-        stock: product.stock,
+        stock: itemStock,
         salePrice: product.salePrice,
         unitPrice: product.salePrice,
-        quantity: 1
+        quantity: 1,
+        colorName: colorName || null,
+        colorHex: colorHex || null
       });
 
       document.getElementById('qsProductSearch').value = '';
@@ -444,10 +476,15 @@
       }
 
       wrapper.classList.remove('hidden');
-      container.innerHTML = qsCart.map((item, i) => `
+      container.innerHTML = qsCart.map((item, i) => {
+        const colorIndicator = item.colorName ? `<span class="w-3 h-3 rounded-full shrink-0 border border-white/20" style="background-color: ${item.colorHex || '#888'};"></span><span class="text-[10px] text-slate-400">${item.colorName}</span>` : '';
+        return `
         <div class="bg-slate-800/40 border border-slate-700/30 rounded-xl p-3 space-y-2" style="animation: cardSlideUp 0.2s ease-out both">
           <div class="flex items-center justify-between">
-            <p class="text-sm font-semibold text-white truncate flex-1">${item.name}</p>
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <p class="text-sm font-semibold text-white truncate">${item.name}</p>
+              ${colorIndicator}
+            </div>
             <button onclick="removeFromQsCart(${i})" class="p-1 text-slate-500 hover:text-red-400 transition-colors shrink-0 ml-2">
               <i class="ph ph-x text-base"></i>
             </button>
@@ -465,8 +502,8 @@
               <p class="text-sm font-bold text-white">$${(item.unitPrice * item.quantity).toLocaleString('es-CO')}</p>
             </div>
           </div>
-        </div>
-      `).join('');
+        </div>`;        
+      }).join('');
 
       updateQsTotal();
     }
@@ -514,11 +551,17 @@
 
       try {
         const payload = {
-          items: qsCart.map(item => ({
-            product: item.product,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice
-          })),
+          items: qsCart.map(item => {
+            const saleItem = {
+              product: item.product,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice
+            };
+            if (item.colorName) {
+              saleItem.colorName = item.colorName;
+            }
+            return saleItem;
+          }),
           paymentMethod: qsSelectedPayment,
           notes: document.getElementById('qsNotes').value.trim()
         };

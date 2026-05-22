@@ -3,6 +3,108 @@ let currentProducts = [];
 let currentCategories = [];
 let currentProviders = [];
 let currentTags = [];
+let productColors = [];
+
+// -- Color Management --
+function addColorRow(color = null) {
+  const entry = color || { name: '', hex: '#6366f1', stock: 0 };
+  productColors.push({ ...entry });
+  renderColorRows();
+}
+
+function removeColorRow(idx) {
+  productColors.splice(idx, 1);
+  renderColorRows();
+}
+
+function updateColorField(idx, field, value) {
+  if (field === 'stock') {
+    productColors[idx].stock = Math.max(0, parseInt(value, 10) || 0);
+  } else {
+    productColors[idx][field] = value;
+  }
+  updateColorsTotal();
+}
+
+function renderColorRows() {
+  const container = document.getElementById('colorsContainer');
+  const emptyState = document.getElementById('colorsEmptyState');
+  const totalBar = document.getElementById('colorsTotalStock');
+  const stockWrapper = document.getElementById('stockFieldWrapper');
+  const stockInput = document.getElementById('stock');
+
+  if (productColors.length === 0) {
+    container.innerHTML = '';
+    emptyState.classList.remove('hidden');
+    totalBar.classList.add('hidden');
+    stockWrapper.classList.remove('hidden');
+    stockInput.required = true;
+    return;
+  }
+
+  emptyState.classList.add('hidden');
+  totalBar.classList.remove('hidden');
+  stockWrapper.classList.add('hidden');
+  stockInput.required = false;
+
+  container.innerHTML = productColors.map((c, i) => `
+    <div class="flex items-center gap-2 bg-slate-800/40 rounded-xl p-2.5 border border-slate-700/30 group" style="animation: cardSlideUp 0.15s ease-out both">
+      <input type="color" value="${c.hex}" onchange="updateColorField(${i}, 'hex', this.value)" class="w-9 h-9 rounded-lg cursor-pointer border-0 bg-transparent p-0 shrink-0" title="Seleccionar color">
+      <div class="flex-1 min-w-0">
+        <input type="text" value="${c.name}" onchange="updateColorField(${i}, 'name', this.value)" placeholder="Nombre (Ej: Rojo)" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all">
+      </div>
+      <div class="w-20 shrink-0">
+        <input type="number" value="${c.stock}" min="0" onchange="updateColorField(${i}, 'stock', this.value)" placeholder="Stock" class="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all text-center" oninput="preventNegative(this)">
+      </div>
+      <button type="button" onclick="removeColorRow(${i})" class="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all shrink-0" title="Eliminar color">
+        <i class="ph ph-x text-sm"></i>
+      </button>
+    </div>
+  `).join('');
+
+  updateColorsTotal();
+}
+
+function updateColorsTotal() {
+  const total = productColors.reduce((sum, c) => sum + (c.stock || 0), 0);
+  const totalEl = document.getElementById('colorsTotalStockValue');
+  if (totalEl) totalEl.textContent = total;
+  // Update hidden stock field
+  if (productColors.length > 0) {
+    document.getElementById('stock').value = total;
+  }
+  // Update hidden colors JSON
+  document.getElementById('productColors').value = JSON.stringify(productColors);
+}
+
+function getColorsDotsHtml(product) {
+  if (!product.colors || product.colors.length === 0) return '';
+  const dots = product.colors.map(c => {
+    const border = c.stock === 0 ? 'border-red-500/50 opacity-40' : 'border-white/20';
+    return `<span class="w-3.5 h-3.5 rounded-full shrink-0 border ${border} shadow-sm" style="background-color: ${c.hex};" title="${c.name}: ${c.stock} disp"></span>`;
+  }).join('');
+  return `<div class="flex items-center gap-1 mt-1.5 flex-wrap">${dots}</div>`;
+}
+
+// -- Contrast Helper --
+function getContrastColor(hexColor) {
+  if (!hexColor) return '#ffffff';
+  const hex = hexColor.replace('#', '');
+  let r, g, b;
+  if (hex.length === 3) {
+    r = parseInt(hex.charAt(0) + hex.charAt(0), 16);
+    g = parseInt(hex.charAt(1) + hex.charAt(1), 16);
+    b = parseInt(hex.charAt(2) + hex.charAt(2), 16);
+  } else if (hex.length === 6) {
+    r = parseInt(hex.substr(0, 2), 16);
+    g = parseInt(hex.substr(2, 2), 16);
+    b = parseInt(hex.substr(4, 2), 16);
+  } else {
+    return '#ffffff';
+  }
+  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  return (yiq >= 128) ? '#0f172a' : '#ffffff';
+}
 
 // -- Price Calculations --
 function calculatePriceFromMargin() {
@@ -48,24 +150,66 @@ function closeTagModal() {
   setTimeout(() => modal.classList.add('hidden'), 200);
 }
 
+let selectedTagIds = [];
+
 function renderTagsInSelector() {
   const container = document.getElementById('tagListContainer');
   container.innerHTML = '';
   if(currentTags.length === 0) { container.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">No hay etiquetas creadas.</p>'; return; }
   
-  container.innerHTML += `<div onclick="selectTag(null, null, null)" class="px-4 py-2 rounded-xl hover:bg-slate-800 cursor-pointer flex items-center gap-3 transition-colors border border-transparent hover:border-slate-700"><div class="w-4 h-4 rounded-full border-2 border-slate-600"></div><span class="text-sm font-medium text-slate-400">Sin Etiqueta</span></div>`;
+  container.innerHTML += `<div onclick="toggleTagSelectionInModal(null)" class="px-4 py-2 rounded-xl hover:bg-slate-800 cursor-pointer flex justify-between items-center transition-colors border border-transparent hover:border-slate-700"><div class="flex items-center gap-3"><div class="w-4 h-4 rounded-full border-2 border-slate-600"></div><span class="text-sm font-medium text-slate-400">Limpiar Selección</span></div></div>`;
   currentTags.forEach(tag => {
-    container.innerHTML += `<div onclick="selectTag('${tag._id}', '${tag.name}', '${tag.color}')" class="px-4 py-2 rounded-xl hover:bg-slate-800 cursor-pointer flex justify-between items-center transition-colors border border-transparent hover:border-slate-700 group"><div class="flex items-center gap-3"><div class="w-4 h-4 rounded-full" style="background-color: ${tag.color};"></div><span class="text-sm font-medium text-white">${tag.name}</span></div></div>`;
+    const isSelected = selectedTagIds.includes(tag._id);
+    const checkIcon = isSelected ? `<i class="ph-bold ph-check text-indigo-400 text-sm"></i>` : `<div class="w-4 h-4 rounded-full border border-slate-600"></div>`;
+    container.innerHTML += `<div onclick="toggleTagSelectionInModal('${tag._id}')" class="px-4 py-2 rounded-xl hover:bg-slate-800 cursor-pointer flex justify-between items-center transition-colors border ${isSelected ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-transparent hover:border-slate-700'} group"><div class="flex items-center gap-3"><div class="w-4 h-4 rounded-full" style="background-color: ${tag.color}; border: 1px solid rgba(255,255,255,0.1);"></div><span class="text-sm font-medium text-white">${tag.name}</span></div><div>${checkIcon}</div></div>`;
   });
 }
 
-function selectTag(id, name, color) {
-  document.getElementById('productTagId').value = id || '';
+function toggleTagSelectionInModal(tagId) {
+  if (tagId === null) {
+    selectedTagIds = [];
+    updateSelectedTagsUI();
+    closeTagModal();
+    return;
+  }
+  const index = selectedTagIds.indexOf(tagId);
+  if (index > -1) {
+    selectedTagIds.splice(index, 1);
+  } else {
+    if (selectedTagIds.length >= 2) {
+      showToast('Máximo 2 etiquetas permitidas', 'error');
+      return;
+    }
+    selectedTagIds.push(tagId);
+  }
+  renderTagsInSelector();
+  updateSelectedTagsUI();
+}
+
+function updateSelectedTagsUI() {
+  document.getElementById('productTagId').value = selectedTagIds.join(',');
   const overlay = document.getElementById('imageTagOverlay');
-  const label = document.getElementById('imageTagLabel');
-  if(id) { overlay.style.backgroundColor = color; overlay.style.border = 'none'; label.innerText = name; }
-  else { overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.5)'; overlay.style.border = '1px solid rgba(255,255,255,0.2)'; label.innerText = 'Etiqueta'; }
-  closeTagModal();
+  overlay.innerHTML = '';
+  if (selectedTagIds.length === 0) {
+    overlay.innerHTML = `<span id="imageTagPlaceholder" class="flex items-center justify-center px-2 py-1 rounded-md shadow border border-white/20 bg-slate-900/50 hover:bg-slate-900/80 text-[10px] font-bold text-white uppercase tracking-wider backdrop-blur-md min-w-[70px] drop-shadow-md"><i class="ph ph-tag drop-shadow-md mr-1"></i> Etiquetas</span>`;
+  } else {
+    selectedTagIds.forEach(id => {
+      const tag = currentTags.find(t => t._id === id);
+      if (tag) {
+        const textColor = getContrastColor(tag.color);
+        overlay.innerHTML += `<span class="flex items-center justify-center px-2 py-1 rounded-md shadow border border-white/10 text-[9px] font-extrabold uppercase tracking-wider backdrop-blur-sm transition-all" style="background-color: ${tag.color}; color: ${textColor};"><i class="ph ph-tag mr-0.5"></i> ${tag.name}</span>`;
+      }
+    });
+  }
+}
+
+function selectTag(id, name, color) {
+  if (!id) {
+    selectedTagIds = [];
+  } else {
+    selectedTagIds = [id];
+  }
+  updateSelectedTagsUI();
 }
 
 async function createNewTag() {
@@ -106,13 +250,25 @@ function toggleTagFilter(tagId) {
 
 function toggleStockFilter(value) {
   filterState.stock = value;
-  ['all', 'inStock', 'lowStock', 'outOfStock'].forEach(btn => {
+  ['all', 'inStock', 'outOfStock'].forEach(btn => {
     const el = document.getElementById(`stock-filter-${btn}`);
     if (!el) return;
     const icon = el.querySelector('i');
     if (btn === value) { el.className = 'stock-filter-btn py-2.5 px-4 rounded-xl text-xs font-bold text-left border flex items-center justify-between transition-all bg-indigo-500/15 border-indigo-500/80 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.1)]'; if (icon) icon.className = 'ph-fill ph-check-circle text-indigo-400 text-base'; }
     else { el.className = 'stock-filter-btn py-2.5 px-4 rounded-xl text-xs font-bold text-left border flex items-center justify-between transition-all bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200'; if (icon) icon.className = 'ph ph-circle text-base'; }
   });
+  
+  // Update quick filter buttons classes
+  ['all', 'inStock', 'outOfStock'].forEach(btn => {
+    const el = document.getElementById(`quick-stock-filter-${btn}`);
+    if (!el) return;
+    if (btn === value) {
+      el.className = 'quick-stock-filter-btn px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-indigo-500/15 border border-indigo-500/80 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.1)]';
+    } else {
+      el.className = 'quick-stock-filter-btn px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-slate-800/40 border border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200';
+    }
+  });
+  
   applyCombinedFilters();
 }
 
@@ -211,10 +367,13 @@ function applyCombinedFilters() {
     const provId = p.provider ? (typeof p.provider === 'object' ? p.provider._id : p.provider) : null;
     return provId && filterState.providers.includes(provId);
   });
-  if (filterState.tags.length > 0) filtered = filtered.filter(p => p.tag && filterState.tags.includes(p.tag._id || p.tag));
+  if (filterState.tags.length > 0) filtered = filtered.filter(p => {
+    const pTags = (p.tags && p.tags.length > 0) ? p.tags : (p.tag ? [p.tag] : []);
+    return pTags.some(t => filterState.tags.includes(t._id || t));
+  });
   if (filterState.stock !== 'all') {
     if (filterState.stock === 'inStock') filtered = filtered.filter(p => p.stock > 0);
-    else if (filterState.stock === 'lowStock') filtered = filtered.filter(p => p.stock <= p.minStock);
+
     else if (filterState.stock === 'outOfStock') filtered = filtered.filter(p => p.stock === 0);
   }
   const mInput = document.getElementById('filterMarginMin');
@@ -272,6 +431,66 @@ function getCategoryId(product) {
   return product.category;
 }
 
+function getTagsBadgeHtml(product) {
+  const productTags = (product.tags && product.tags.length > 0) ? product.tags : (product.tag ? [product.tag] : []);
+  if (productTags.length === 0) return '';
+  
+  if (productTags.length === 1) {
+    const t1 = productTags[0];
+    if (!t1 || !t1.name) return '';
+    const textColor1 = getContrastColor(t1.color || '#6366f1');
+    return `
+      <div class="absolute top-0 right-0 overflow-hidden w-24 h-24 pointer-events-none rounded-tr-3xl z-10">
+        <div class="absolute top-[22px] right-[-40px] rotate-45 w-[140px] text-center text-[8px] md:text-[9px] font-black py-0.5 text-white shadow-sm uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis px-2" style="background-color: ${t1.color || '#6366f1'}; color: ${textColor1};" title="${t1.name}">
+          ${t1.name}
+        </div>
+      </div>
+    `;
+  }
+  
+  // 2 tags
+  const t1 = productTags[0];
+  const t2 = productTags[1];
+  const hasT1 = t1 && t1.name;
+  const hasT2 = t2 && t2.name;
+  
+  if (!hasT1 && !hasT2) return '';
+  if (hasT1 && !hasT2) {
+    const textColor1 = getContrastColor(t1.color || '#6366f1');
+    return `
+      <div class="absolute top-0 right-0 overflow-hidden w-24 h-24 pointer-events-none rounded-tr-3xl z-10">
+        <div class="absolute top-[22px] right-[-40px] rotate-45 w-[140px] text-center text-[8px] md:text-[9px] font-black py-0.5 text-white shadow-sm uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis px-2" style="background-color: ${t1.color || '#6366f1'}; color: ${textColor1};" title="${t1.name}">
+          ${t1.name}
+        </div>
+      </div>
+    `;
+  }
+  if (!hasT1 && hasT2) {
+    const textColor2 = getContrastColor(t2.color || '#6366f1');
+    return `
+      <div class="absolute top-0 right-0 overflow-hidden w-24 h-24 pointer-events-none rounded-tr-3xl z-10">
+        <div class="absolute top-[22px] right-[-40px] rotate-45 w-[140px] text-center text-[8px] md:text-[9px] font-black py-0.5 text-white shadow-sm uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis px-2" style="background-color: ${t2.color || '#6366f1'}; color: ${textColor2};" title="${t2.name}">
+          ${t2.name}
+        </div>
+      </div>
+    `;
+  }
+  
+  const textColor1 = getContrastColor(t1.color || '#6366f1');
+  const textColor2 = getContrastColor(t2.color || '#6366f1');
+  
+  return `
+    <div class="absolute top-0 right-0 overflow-hidden w-28 h-28 pointer-events-none rounded-tr-3xl z-10">
+      <div class="absolute top-[12px] right-[-45px] rotate-45 w-[140px] text-center text-[7px] md:text-[7.5px] font-black py-0.5 text-white shadow-sm uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis px-2" style="background-color: ${t1.color || '#6366f1'}; color: ${textColor1}; z-index: 12;" title="${t1.name}">
+        ${t1.name}
+      </div>
+      <div class="absolute top-[36px] right-[-45px] rotate-45 w-[140px] text-center text-[7px] md:text-[7.5px] font-black py-0.5 text-white shadow-sm uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis px-2" style="background-color: ${t2.color || '#6366f1'}; color: ${textColor2}; z-index: 11;" title="${t2.name}">
+        ${t2.name}
+      </div>
+    </div>
+  `;
+}
+
 function renderProducts(productsToRender = currentProducts) {
   const container = document.getElementById('productList');
   container.innerHTML = '';
@@ -284,13 +503,28 @@ function renderProducts(productsToRender = currentProducts) {
     const stockColor = isLowStock ? 'text-red-400 bg-red-400/10 border-red-400/20' : 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
     const stockIcon = isLowStock ? 'ph-warning-circle' : 'ph-check-circle';
     const categoryName = getCategoryName(product);
-    const imageHtml = product.fileId ? `<img src="/api/drive-image/${product.fileId}" class="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover bg-slate-800 shrink-0 border border-slate-700/50" onerror="this.outerHTML='<div class=\\'w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-500 shrink-0 border border-slate-700/50\\'><i class=\\'ph ph-image text-3xl\\'></i></div>'">` : `<div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-500 shrink-0 border border-slate-700/50"><i class="ph ph-image text-3xl"></i></div>`;
+    const colorDotsHtml = getColorsDotsHtml(product);
+    
+    const imageContainerHtml = `
+      <div class="relative shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border border-slate-700/50">
+        ${product.fileId ? `
+          <img src="/api/drive-image/${product.fileId}" class="w-full h-full object-cover bg-slate-800" onerror="this.outerHTML='<div class=\\'w-full h-full bg-slate-800 flex items-center justify-center text-slate-500\\'><i class=\\'ph ph-image text-3xl\\'></i></div>'">
+        ` : `
+          <div class="w-full h-full bg-slate-800 flex items-center justify-center text-slate-500"><i class="ph ph-image text-3xl"></i></div>
+        `}
+        ${product.stock === 0 ? `
+          <div class="absolute inset-0 bg-red-950/15 pointer-events-none z-10"></div>
+          <div class="absolute top-0 right-0 overflow-hidden w-12 h-12 pointer-events-none z-20">
+            <div class="absolute top-[8px] right-[-24px] rotate-45 w-[85px] text-center text-[7px] md:text-[8px] font-black py-0.5 text-white bg-red-600 shadow-[0_2px_4px_rgba(0,0,0,0.35)] uppercase tracking-wider border-b border-red-400/30">
+              Agotado
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
     const actionButtons = `<div class="flex gap-2 w-full mt-4 pt-4 border-t border-slate-700/30"><button onclick="editProduct('${product._id}')" class="flex-1 py-2 flex items-center justify-center gap-2 text-xs font-bold text-slate-300 hover:text-indigo-400 bg-slate-800/50 hover:bg-indigo-500/10 rounded-xl transition-colors border border-slate-700/50"><i class="ph-bold ph-pencil-simple text-sm"></i> Editar</button>${['Super Admin', 'Administrador'].includes(userRole) ? `<button onclick="deleteProduct('${product._id}')" class="flex-1 py-2 flex items-center justify-center gap-2 text-xs font-bold text-slate-300 hover:text-red-400 bg-slate-800/50 hover:bg-red-500/10 rounded-xl transition-colors border border-slate-700/50"><i class="ph-bold ph-trash text-sm"></i> Eliminar</button>` : ''}</div>`;
-    let tagBadgeHtml = '';
-    if (product.tag && product.tag.name) {
-      tagBadgeHtml = `<div class="absolute top-0 right-0 overflow-hidden w-24 h-24 pointer-events-none rounded-tr-3xl z-10"><div class="absolute top-[25px] right-[-45px] rotate-45 w-[160px] text-center text-[8px] md:text-[9px] font-black py-1 text-white shadow-md uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis px-3" style="background-color: ${product.tag.color || '#6366f1'};" title="${product.tag.name}">${product.tag.name}</div></div>`;
-    }
-    container.insertAdjacentHTML('beforeend', `<div class="glass-card rounded-3xl p-4 md:p-5 flex flex-col card-hover border border-slate-700/50 group relative overflow-hidden">${tagBadgeHtml}<div class="flex gap-4">${imageHtml}<div class="flex-1 min-w-0 flex flex-col justify-center"><h3 class="font-bold text-white truncate text-base md:text-lg mb-1 group-hover:text-indigo-300 transition-colors">${product.name}</h3><div class="text-xs text-slate-400 mb-2 truncate font-medium flex items-center gap-1.5"><i class="ph-fill ph-tag text-slate-500"></i> ${categoryName}</div><div class="flex items-center gap-2"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${stockColor} border whitespace-nowrap uppercase tracking-wider"><i class="ph-fill ${stockIcon}"></i> ${product.stock} disp</span>${product.sku ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700 uppercase">SKU: ${product.sku}</span>` : ''}</div></div></div><div class="mt-4 flex justify-between items-end px-1"><div><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Precio Venta</p><div class="text-xl font-bold text-indigo-400 tracking-tight">$${Math.round(product.salePrice).toLocaleString('es-CO')}</div></div></div>${actionButtons}</div>`);
+    container.insertAdjacentHTML('beforeend', `<div class="glass-card rounded-3xl p-4 md:p-5 flex flex-col card-hover border border-slate-700/50 group relative overflow-hidden">${getTagsBadgeHtml(product)}<div class="flex gap-4">${imageContainerHtml}<div class="flex-1 min-w-0 flex flex-col justify-center"><h3 class="font-bold text-white truncate text-base md:text-lg mb-1 group-hover:text-indigo-300 transition-colors pr-10">${product.name}</h3><div class="text-xs text-slate-400 mb-2 truncate font-medium flex items-center gap-1.5"><i class="ph-fill ph-tag text-slate-500"></i> ${categoryName}</div><div class="flex items-center gap-2"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${stockColor} border whitespace-nowrap uppercase tracking-wider"><i class="ph-fill ${stockIcon}"></i> ${product.stock} disp</span>${product.sku ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700 uppercase">SKU: ${product.sku}</span>` : ''}</div>${colorDotsHtml}</div></div><div class="mt-4 flex justify-between items-end px-1"><div><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Precio Venta</p><div class="text-xl font-bold text-indigo-400 tracking-tight">$${Math.round(product.salePrice).toLocaleString('es-CO')}</div></div></div>${actionButtons}</div>`);
   });
 }
 
@@ -304,14 +538,17 @@ function openProductModal(product = null) {
   document.getElementById('imagePreview').classList.add('hidden');
   document.getElementById('imagePreview').src = '';
   document.getElementById('imagePlaceholder').classList.remove('hidden');
-  selectTag(null, null, null);
+  selectedTagIds = [];
+  updateSelectedTagsUI();
+  productColors = [];
+  renderColorRows();
   document.getElementById('profitMargin').value = '';
   document.getElementById('selectedCategoryId').value = '';
   if (product) {
     document.getElementById('modalTitle').innerHTML = '<i class="ph-fill ph-pencil-simple text-indigo-400"></i> Editar Producto';
     document.getElementById('productId').value = product._id;
     document.getElementById('name').value = product.name;
-    document.getElementById('sku').value = product.sku;
+    document.getElementById('sku').value = product.sku || '';
     // Set category display name and hidden ID
     const catName = getCategoryName(product);
     const catId = getCategoryId(product);
@@ -329,8 +566,17 @@ function openProductModal(product = null) {
     document.getElementById('salePrice').value = Math.round(product.salePrice).toLocaleString('es-CO');
     calculateMarginFromPrice();
     document.getElementById('stock').value = product.stock;
-    if(product.tag) selectTag(product.tag._id, product.tag.name, product.tag.color);
+    selectedTagIds = [];
+    if (product.tags && product.tags.length > 0) {
+      selectedTagIds = product.tags.map(t => t._id || t);
+    } else if (product.tag) {
+      selectedTagIds = [product.tag._id || product.tag];
+    }
+    updateSelectedTagsUI();
     document.getElementById('minStock').value = product.minStock;
+    // Load existing colors
+    productColors = (product.colors || []).map(c => ({ name: c.name, hex: c.hex, stock: c.stock || 0 }));
+    renderColorRows();
     if (product.fileId) { document.getElementById('imagePreview').src = `/api/drive-image/${product.fileId}`; document.getElementById('imagePreview').classList.remove('hidden'); document.getElementById('imagePlaceholder').classList.add('hidden'); }
     
     // Show delete button in modal if user has permissions
@@ -395,8 +641,12 @@ async function handleFormSubmit(e) {
   formData.append('salePrice', getRawValue(document.getElementById('salePrice')));
   formData.append('stock', getRawValue(document.getElementById('stock')));
   formData.append('minStock', getRawValue(document.getElementById('minStock')));
-  const tagId = document.getElementById('productTagId').value;
-  if (tagId) formData.append('tag', tagId);
+  const tagIds = document.getElementById('productTagId').value;
+  const arrayTags = tagIds ? tagIds.split(',').filter(Boolean) : [];
+  formData.append('tags', JSON.stringify(arrayTags));
+  // Include colors
+  const colorsData = productColors.filter(c => c.name && c.name.trim());
+  formData.append('colors', JSON.stringify(colorsData));
   const imageFile = document.getElementById('productImage').files[0];
   if (imageFile) formData.append('image', imageFile);
   const submitBtn = document.getElementById('submitBtn');
@@ -526,4 +776,50 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchProviders();
   document.getElementById('searchInput').addEventListener('input', () => applyCombinedFilters());
   document.getElementById('productForm').addEventListener('submit', handleFormSubmit);
+
+  // -- Drag and Drop for Product Image --
+  const imageDropZone = document.getElementById('imageDropZone');
+  if (imageDropZone) {
+    let dragCounter = 0;
+
+    imageDropZone.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      if (dragCounter === 1) {
+        imageDropZone.classList.add('border-indigo-500', 'bg-indigo-500/10', 'scale-[1.02]');
+        imageDropZone.classList.remove('border-slate-600', 'bg-slate-800/80');
+      }
+    });
+
+    imageDropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    imageDropZone.addEventListener('dragleave', (e) => {
+      dragCounter--;
+      if (dragCounter === 0) {
+        imageDropZone.classList.remove('border-indigo-500', 'bg-indigo-500/10', 'scale-[1.02]');
+        imageDropZone.classList.add('border-slate-600', 'bg-slate-800/80');
+      }
+    });
+
+    imageDropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      imageDropZone.classList.remove('border-indigo-500', 'bg-indigo-500/10', 'scale-[1.02]');
+      imageDropZone.classList.add('border-slate-600', 'bg-slate-800/80');
+
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+          const fileInput = document.getElementById('productImage');
+          fileInput.files = files;
+          previewImage({ target: fileInput });
+        } else {
+          showToast('Por favor, selecciona un archivo de imagen válido', 'error');
+        }
+      }
+    });
+  }
 });

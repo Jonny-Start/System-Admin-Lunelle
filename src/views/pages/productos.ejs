@@ -1,264 +1,389 @@
 <% layout('layout') -%>
-<header class="flex flex-col md:flex-row md:justify-between md:items-end mb-6 gap-4">
-  <div>
-    <h2 class="text-2xl md:text-3xl font-bold text-white mb-1">Inventario</h2>
-    <p class="text-slate-400 text-sm">Gestiona tu catálogo y controla el stock</p>
-  </div>
-  <button onclick="openProductModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-5 py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-transform active:scale-95 font-medium shrink-0">
-    <i class="ph ph-plus text-lg"></i> Nuevo Producto
-  </button>
-</header>
-
-<!-- Search & Filter -->
-<div class="sticky top-0 z-10 pt-2 pb-4 flex gap-3 -mx-4 px-4 md:mx-0 md:px-0 bg-transparent backdrop-blur-none">
-  <div class="relative flex-1">
-    <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
-    <input type="text" id="searchInput" placeholder="Buscar producto, SKU..." class="w-full h-[50px] bg-slate-800/60 border border-slate-700/50 rounded-2xl pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-slate-500 text-white shadow-inner">
-  </div>
-  <button onclick="openFilterModal()" class="relative h-[50px] w-[50px] bg-slate-800/60 border border-slate-700/50 rounded-2xl flex items-center justify-center text-slate-300 hover:bg-slate-700 transition-colors shadow-sm shrink-0">
-    <i class="ph ph-faders text-lg"></i>
-    <span id="activeFiltersBadge" class="absolute -top-1 -right-1 bg-indigo-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-900 hidden">0</span>
-  </button>
-</div>
-
-<!-- Product List -->
-<div id="productList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 mt-2">
-  <div class="col-span-full flex justify-center py-20"><i class="ph ph-spinner animate-spin text-4xl text-indigo-500"></i></div>
-</div>
-
-<!-- Product Modal (Create/Edit) -->
-<div id="productModal" class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4">
-  <div class="bg-[#1e293b] w-full md:w-[550px] rounded-t-3xl md:rounded-3xl max-h-[90vh] md:max-h-[85vh] flex flex-col transform transition-transform translate-y-full md:translate-y-0 duration-300 shadow-2xl border border-slate-700/50" id="modalContent">
-    
-    <div class="px-6 py-5 border-b border-slate-700/50 flex justify-between items-center sticky top-0 bg-[#1e293b] rounded-t-3xl z-40">
-      <h2 id="modalTitle" class="text-xl font-bold text-white flex items-center gap-2">
-        <i class="ph-fill ph-package text-indigo-400"></i> Nuevo Producto
-      </h2>
-      <button onclick="closeProductModal()" class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
-        <i class="ph ph-x text-lg"></i>
-      </button>
+  <header class="flex flex-col md:flex-row md:justify-between md:items-end mb-0 gap-4">
+    <div>
+      <h2 class="text-2xl md:text-3xl font-bold text-white mb-1">Inventario</h2>
+      <p class="text-slate-400 text-sm">Gestiona tu catálogo y controla el stock</p>
     </div>
+    <button onclick="openProductModal()"
+      class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-5 py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-transform active:scale-95 font-medium shrink-0">
+      <i class="ph ph-plus text-lg"></i> Nuevo Producto
+    </button>
+  </header>
 
-    <form id="productForm" class="p-6 overflow-y-auto no-scrollbar flex flex-col gap-5">
-      <input type="hidden" id="productId">
-      <input type="hidden" id="selectedCategoryId">
-      <input type="hidden" id="selectedProviderId">
-      
-      <div class="flex justify-center mb-2 relative w-full px-8">
-        <div onclick="document.getElementById('productImage').click()" class="w-48 h-48 mx-auto rounded-3xl bg-slate-800/80 border-2 border-dashed border-slate-600 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-slate-800 transition-all relative overflow-hidden group shadow-inner">
-          <img id="imagePreview" class="absolute inset-0 w-full h-full object-cover hidden transition-transform group-hover:scale-105 z-20">
-          
-          <div id="imagePlaceholder" class="flex flex-col items-center justify-center z-10 transition-opacity">
-            <i class="ph ph-camera-plus text-4xl text-slate-400 group-hover:text-indigo-400 transition-colors"></i>
-            <span class="text-xs font-bold text-slate-400 mt-2 group-hover:text-indigo-400 uppercase tracking-wider transition-colors">Añadir Foto</span>
-          </div>
-          
-          <div id="imageTagOverlay" onclick="event.stopPropagation(); openTagModal()" class="absolute top-3 left-3 z-30 flex items-center justify-center px-2 py-1 rounded-md shadow border border-white/20 bg-slate-900/50 hover:bg-slate-900/80 cursor-pointer backdrop-blur-md transition-all min-w-[70px]">
-            <span id="imageTagText" class="text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1 drop-shadow-md">
-              <i class="ph ph-tag drop-shadow-md"></i> <span id="imageTagLabel">Etiqueta</span>
-            </span>
-          </div>
-          <input type="hidden" id="productTagId">
-        </div>
-        <input type="file" id="productImage" accept="image/*" class="hidden" onchange="previewImage(event)">
-      </div>
-
-      <div>
-        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nombre del Producto</label>
-        <input type="text" id="name" required class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600" placeholder="Ej. Camiseta Básica Negra">
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Código / SKU <span class="text-slate-500 font-normal lowercase">(Opcional)</span></label>
-          <input type="text" id="sku" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600" placeholder="SKU-001">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Categoría</label>
-          <div class="custom-select-wrapper">
-            <div class="relative">
-              <i class="ph ph-tag absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 text-sm"></i>
-              <input type="text" id="category" required autocomplete="off" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600 cursor-text" placeholder="Buscar categoría..." onfocus="openCatDropdown()" oninput="document.getElementById('selectedCategoryId').value=''; filterCatDropdown(this.value)">
-              <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none transition-transform" id="catCaretIcon"></i>
-            </div>
-            <div class="custom-select-dropdown" id="catDropdown"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Proveedor <span class="text-slate-500 font-normal lowercase">(Opcional)</span></label>
-          <div class="custom-select-wrapper">
-            <div class="relative">
-              <i class="ph ph-truck absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 text-sm"></i>
-              <input type="text" id="provider" autocomplete="off" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600 cursor-text" placeholder="Buscar proveedor..." onfocus="openProvDropdown()" oninput="document.getElementById('selectedProviderId').value=''; filterProvDropdown(this.value)">
-              <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none transition-transform" id="provCaretIcon"></i>
-            </div>
-            <div class="custom-select-dropdown" id="provDropdown"></div>
-          </div>
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Descripción Corta <span class="text-slate-500 font-normal lowercase">(Opcional)</span></label>
-          <input type="text" id="description" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600" placeholder="Detalles del producto...">
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 gap-4 p-4 rounded-2xl bg-slate-800/30 border border-slate-700/30">
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Costo ($)</label>
-            <div class="relative">
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">$</span>
-              <input type="text" inputmode="numeric" id="purchasePrice" required class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-6 pr-3 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all" placeholder="0" oninput="formatCurrency(this); calculatePriceFromMargin()">
-            </div>
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Margen (%)</label>
-            <div class="relative">
-              <input type="number" step="1" min="0" id="profitMargin" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all" placeholder="0" oninput="preventNegative(this); calculatePriceFromMargin()">
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">%</span>
-            </div>
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Precio de Venta</label>
-            <div class="relative">
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 font-medium">$</span>
-              <input type="text" inputmode="numeric" id="salePrice" required class="w-full bg-slate-800 border border-indigo-500/30 rounded-xl pl-6 pr-3 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)]" placeholder="0" oninput="formatCurrency(this); calculateMarginFromPrice()">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Stock Disponible</label>
-          <input type="number" id="stock" min="0" required class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all" placeholder="0" oninput="preventNegative(this)">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Alerta Stock Mínimo</label>
-          <input type="number" id="minStock" min="0" required class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all" placeholder="5" oninput="preventNegative(this)">
-        </div>
-      </div>
-
-      <div class="h-5 shrink-0"></div>
-
-      <div class="py-3 px-4 sticky bottom-0 bg-slate-900/80 backdrop-blur-xl mt-auto flex items-center gap-3 border-t border-slate-700/50 rounded-t-2xl rounded-b-3xl -mx-6 -mb-6">
-        <button type="button" id="modalDeleteBtn" onclick="deleteProductFromModal()" class="hidden py-2.5 px-4 rounded-xl font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors border border-red-500/30 shadow-sm flex items-center justify-center gap-2 shrink-0">
-          <i class="ph-bold ph-trash"></i> <span>Eliminar</span>
-        </button>
-        <button type="button" onclick="closeProductModal()" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-slate-300 bg-slate-800/80 hover:bg-slate-700 transition-colors border border-slate-600/50 shadow-sm">Cancelar</button>
-        <button type="submit" id="submitBtn" class="flex-1 py-2.5 px-4 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-transform active:scale-95 flex justify-center items-center gap-2 border border-indigo-500/80">
-          <i class="ph-bold ph-check"></i> <span>Guardar</span>
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Tag Selector Modal (inline for product) -->
-<div id="tagModal" class="fixed inset-0 z-[60] hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-  <div class="bg-[#1e293b] w-full md:w-[350px] rounded-3xl flex flex-col shadow-2xl border border-slate-700/50 transform scale-95 opacity-0 transition-all duration-200" id="tagModalContent">
-    <div class="px-5 py-4 border-b border-slate-700/50 flex justify-between items-center bg-[#1e293b] rounded-t-3xl">
-      <h2 class="text-base font-bold text-white flex items-center gap-2">
-        <i class="ph-fill ph-tag text-indigo-400"></i> Seleccionar Etiqueta
-      </h2>
-      <button onclick="closeTagModal()" class="text-slate-400 hover:text-white transition-colors">
-        <i class="ph ph-x text-lg"></i>
-      </button>
+  <!-- Search & Filter -->
+  <div
+    class="sticky -top-4 md:-top-8 z-20 pt-8 md:pt-12 pb-4 flex gap-3 -mx-4 px-4 md:-mx-8 md:px-8 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/50 shadow-sm">
+    <div class="relative flex-1">
+      <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+      <input type="text" id="searchInput" placeholder="Buscar producto, SKU..."
+        class="w-full h-[50px] bg-slate-800/60 border border-slate-700/50 rounded-2xl pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-slate-500 text-white shadow-inner">
     </div>
-    <div class="p-4 flex flex-col gap-2 max-h-[40vh] overflow-y-auto no-scrollbar" id="tagListContainer"></div>
-    <div class="p-4 border-t border-slate-700/50 bg-slate-800/30 rounded-b-3xl">
-      <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Crear Nueva Etiqueta</p>
-      <div class="flex gap-2">
-        <input type="text" id="newTagName" placeholder="Nombre" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-        <input type="color" id="newTagColor" value="#6366f1" class="w-10 h-10 p-0 border-0 rounded-xl cursor-pointer bg-transparent">
-        <button type="button" onclick="createNewTag()" class="bg-indigo-600 text-white rounded-xl px-3 hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/30">
-          <i class="ph-bold ph-plus"></i>
-        </button>
-      </div>
-    </div>
+    <button onclick="openFilterModal()"
+      class="relative h-[50px] w-[50px] bg-slate-800/60 border border-slate-700/50 rounded-2xl flex items-center justify-center text-slate-300 hover:bg-slate-700 transition-colors shadow-sm shrink-0">
+      <i class="ph ph-faders text-lg"></i>
+      <span id="activeFiltersBadge"
+        class="absolute -top-1 -right-1 bg-indigo-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-900 hidden">0</span>
+    </button>
   </div>
-</div>
 
-<!-- Filter Modal -->
-<div id="filterModal" class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4">
-  <div class="bg-[#1e293b] w-full md:w-[480px] rounded-t-3xl md:rounded-3xl max-h-[90vh] flex flex-col transform transition-transform translate-y-full md:translate-y-0 duration-300 shadow-2xl border border-slate-700/50" id="filterModalContent">
-    <div class="px-6 py-5 border-b border-slate-700/50 flex justify-between items-center sticky top-0 bg-[#1e293b] rounded-t-3xl z-40">
-      <h2 class="text-xl font-bold text-white flex items-center gap-2">
-        <i class="ph-fill ph-faders text-indigo-400"></i> Filtros de Inventario
-      </h2>
-      <div class="flex items-center gap-3">
-        <button onclick="clearAllFilters()" class="text-xs font-semibold text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition-colors">
-          Limpiar
-        </button>
-        <button onclick="closeFilterModal()" class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+  <!-- Quick Stock Filters -->
+  <div class="flex gap-2 pb-4 overflow-x-auto no-scrollbar scroll-smooth">
+    <button onclick="toggleStockFilter('all')" id="quick-stock-filter-all"
+      class="quick-stock-filter-btn px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-indigo-500/15 border border-indigo-500/80 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.1)]">
+      Todos
+    </button>
+    <button onclick="toggleStockFilter('inStock')" id="quick-stock-filter-inStock"
+      class="quick-stock-filter-btn px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-slate-800/40 border border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
+      Con Stock
+    </button>
+
+    <button onclick="toggleStockFilter('outOfStock')" id="quick-stock-filter-outOfStock"
+      class="quick-stock-filter-btn px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-slate-800/40 border border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
+      Sin Stock (Agotado)
+    </button>
+  </div>
+
+
+  <!-- Product List -->
+  <div id="productList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 mt-2">
+    <div class="col-span-full flex justify-center py-20"><i
+        class="ph ph-spinner animate-spin text-4xl text-indigo-500"></i></div>
+  </div>
+
+  <!-- Product Modal (Create/Edit) -->
+  <div id="productModal"
+    class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4">
+    <div
+      class="bg-[#1e293b] w-full md:w-[550px] rounded-t-3xl md:rounded-3xl max-h-[90vh] md:max-h-[85vh] flex flex-col transform transition-transform translate-y-full md:translate-y-0 duration-300 shadow-2xl border border-slate-700/50"
+      id="modalContent">
+
+      <div
+        class="px-6 py-5 border-b border-slate-700/50 flex justify-between items-center sticky top-0 bg-[#1e293b] rounded-t-3xl z-40">
+        <h2 id="modalTitle" class="text-xl font-bold text-white flex items-center gap-2">
+          <i class="ph-fill ph-package text-indigo-400"></i> Nuevo Producto
+        </h2>
+        <button onclick="closeProductModal()"
+          class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
           <i class="ph ph-x text-lg"></i>
         </button>
       </div>
-    </div>
-    
-    <div class="p-6 overflow-y-auto no-scrollbar flex flex-col gap-6" style="max-height: calc(90vh - 150px);">
-      <div>
-        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Filtrar por Categoría</label>
-        <div class="flex flex-wrap gap-2" id="filterCategoryContainer"></div>
-      </div>
-      <div>
-        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Filtrar por Proveedor</label>
-        <div class="flex flex-wrap gap-2" id="filterProviderContainer"></div>
-      </div>
-      <div>
-        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Filtrar por Etiquetas</label>
-        <div class="flex flex-wrap gap-2" id="filterTagContainer"></div>
-      </div>
-      <div>
-        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Estado del Stock</label>
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="toggleStockFilter('all')" id="stock-filter-all" class="stock-filter-btn py-2.5 px-4 rounded-xl text-xs font-bold text-left border flex items-center justify-between transition-all bg-indigo-500/10 border-indigo-500/80 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.1)]">
-            <span>Todos</span>
-            <i class="ph-fill ph-check-circle text-indigo-400 text-base"></i>
+
+      <form id="productForm" class="p-6 overflow-y-auto no-scrollbar flex flex-col gap-5">
+        <input type="hidden" id="productId">
+        <input type="hidden" id="selectedCategoryId">
+        <input type="hidden" id="selectedProviderId">
+
+        <div class="flex justify-center mb-2 relative w-full px-8">
+          <div id="imageDropZone" onclick="document.getElementById('productImage').click()"
+            class="w-48 h-48 mx-auto rounded-3xl bg-slate-800/80 border-2 border-dashed border-slate-600 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-slate-800 transition-all relative overflow-hidden group shadow-inner">
+            <img id="imagePreview"
+              class="absolute inset-0 w-full h-full object-cover hidden transition-transform group-hover:scale-105 z-20">
+
+            <div id="imagePlaceholder" class="flex flex-col items-center justify-center z-10 transition-opacity">
+              <i class="ph ph-camera-plus text-4xl text-slate-400 group-hover:text-indigo-400 transition-colors"></i>
+              <span
+                class="text-xs font-bold text-slate-400 mt-2 group-hover:text-indigo-400 uppercase tracking-wider transition-colors">Añadir
+                Foto</span>
+            </div>
+
+            <div id="imageTagOverlay" onclick="event.stopPropagation(); openTagModal()"
+              class="absolute top-3 left-3 right-3 z-30 flex flex-wrap gap-1 cursor-pointer pointer-events-auto">
+              <span id="imageTagPlaceholder"
+                class="flex items-center justify-center px-2 py-1 rounded-md shadow border border-white/20 bg-slate-900/50 hover:bg-slate-900/80 text-[10px] font-bold text-white uppercase tracking-wider backdrop-blur-md min-w-[70px] drop-shadow-md">
+                <i class="ph ph-tag drop-shadow-md mr-1"></i> Etiquetas
+              </span>
+            </div>
+            <input type="hidden" id="productTagId">
+          </div>
+          <input type="file" id="productImage" accept="image/*" class="hidden" onchange="previewImage(event)">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nombre del
+            Producto</label>
+          <input type="text" id="name" required
+            class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600"
+            placeholder="Ej. Camiseta Básica Negra">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Código / SKU <span
+                class="text-slate-500 font-normal lowercase">(Opcional)</span></label>
+            <input type="text" id="sku"
+              class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600"
+              placeholder="SKU-001">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Categoría</label>
+            <div class="custom-select-wrapper">
+              <div class="relative">
+                <i class="ph ph-tag absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 text-sm"></i>
+                <input type="text" id="category" required autocomplete="off"
+                  class="w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600 cursor-text"
+                  placeholder="Buscar categoría..." onfocus="openCatDropdown()"
+                  oninput="document.getElementById('selectedCategoryId').value=''; filterCatDropdown(this.value)">
+                <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none transition-transform"
+                  id="catCaretIcon"></i>
+              </div>
+              <div class="custom-select-dropdown" id="catDropdown"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Proveedor <span
+                class="text-slate-500 font-normal lowercase">(Opcional)</span></label>
+            <div class="custom-select-wrapper">
+              <div class="relative">
+                <i class="ph ph-truck absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 text-sm"></i>
+                <input type="text" id="provider" autocomplete="off"
+                  class="w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600 cursor-text"
+                  placeholder="Buscar proveedor..." onfocus="openProvDropdown()"
+                  oninput="document.getElementById('selectedProviderId').value=''; filterProvDropdown(this.value)">
+                <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none transition-transform"
+                  id="provCaretIcon"></i>
+              </div>
+              <div class="custom-select-dropdown" id="provDropdown"></div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Descripción Corta
+              <span class="text-slate-500 font-normal lowercase">(Opcional)</span></label>
+            <input type="text" id="description"
+              class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-600"
+              placeholder="Detalles del producto...">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 p-4 rounded-2xl bg-slate-800/30 border border-slate-700/30">
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Costo ($)</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">$</span>
+                <input type="text" inputmode="numeric" id="purchasePrice" required
+                  class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-6 pr-3 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
+                  placeholder="0" oninput="formatCurrency(this); calculatePriceFromMargin()">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Margen (%)</label>
+              <div class="relative">
+                <input type="number" step="1" min="0" id="profitMargin"
+                  class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
+                  placeholder="0" oninput="preventNegative(this); calculatePriceFromMargin()">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">%</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Precio de
+                Venta</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 font-medium">$</span>
+                <input type="text" inputmode="numeric" id="salePrice" required
+                  class="w-full bg-slate-800 border border-indigo-500/30 rounded-xl pl-6 pr-3 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)]"
+                  placeholder="0" oninput="formatCurrency(this); calculateMarginFromPrice()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div id="stockFieldWrapper">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Stock
+              Disponible</label>
+            <input type="number" id="stock" min="0" required
+              class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
+              placeholder="0" oninput="preventNegative(this)">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Alerta Stock
+              Mínimo</label>
+            <input type="number" id="minStock" min="0" required
+              class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
+              placeholder="1" oninput="preventNegative(this)">
+          </div>
+        </div>
+
+        <!-- Colors Section -->
+        <div class="rounded-2xl border border-slate-700/30 overflow-hidden" style="display: inline-table">
+          <div class="px-4 py-3 bg-slate-800/30 flex items-center justify-between">
+            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="ph-fill ph-palette text-indigo-400"></i> Colores Disponibles
+              <span class="text-slate-500 font-normal lowercase">(Opcional)</span>
+            </label>
+            <button type="button" onclick="addColorRow()"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 text-[10px] font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95">
+              <i class="ph-bold ph-plus text-xs"></i> Color
+            </button>
+          </div>
+          <div id="colorsContainer" class="p-3 space-y-2"></div>
+          <div id="colorsEmptyState" class="px-4 py-3 text-center">
+            <p class="text-[11px] text-slate-500 italic">Sin colores — el stock se maneja de forma general</p>
+          </div>
+          <div id="colorsTotalStock"
+            class="hidden px-4 py-2.5 bg-slate-800/20 border-t border-slate-700/30 flex items-center justify-between">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stock Total (suma de
+              colores)</span>
+            <span id="colorsTotalStockValue" class="text-sm font-bold text-indigo-400">0</span>
+          </div>
+        </div>
+        <input type="hidden" id="productColors">
+
+        <div class="h-5 shrink-0"></div>
+
+        <div
+          class="py-3 px-4 sticky bottom-0 bg-slate-900/80 backdrop-blur-xl mt-auto flex items-center gap-3 border-t border-slate-700/50 rounded-t-2xl rounded-b-3xl -mx-6 -mb-6">
+          <button type="button" id="modalDeleteBtn" onclick="deleteProductFromModal()"
+            class="hidden py-2.5 px-4 rounded-xl font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors border border-red-500/30 shadow-sm flex items-center justify-center gap-2 shrink-0">
+            <i class="ph-bold ph-trash"></i> <span>Eliminar</span>
           </button>
-          <button onclick="toggleStockFilter('inStock')" id="stock-filter-inStock" class="stock-filter-btn py-2.5 px-4 rounded-xl text-xs font-bold text-left border flex items-center justify-between transition-all bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
-            <span>Con Stock (> 0)</span>
-            <i class="ph ph-circle text-base"></i>
-          </button>
-          <button onclick="toggleStockFilter('lowStock')" id="stock-filter-lowStock" class="stock-filter-btn py-2.5 px-4 rounded-xl text-xs font-bold text-left border flex items-center justify-between transition-all bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
-            <span>Bajo Stock (≤ Mínimo)</span>
-            <i class="ph ph-circle text-base"></i>
-          </button>
-          <button onclick="toggleStockFilter('outOfStock')" id="stock-filter-outOfStock" class="stock-filter-btn py-2.5 px-4 rounded-xl text-xs font-bold text-left border flex items-center justify-between transition-all bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
-            <span>Sin Stock (Agotado)</span>
-            <i class="ph ph-circle text-base"></i>
+          <button type="button" onclick="closeProductModal()"
+            class="flex-1 py-2.5 px-4 rounded-xl font-bold text-slate-300 bg-slate-800/80 hover:bg-slate-700 transition-colors border border-slate-600/50 shadow-sm">Cancelar</button>
+          <button type="submit" id="submitBtn"
+            class="flex-1 py-2.5 px-4 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-transform active:scale-95 flex justify-center items-center gap-2 border border-indigo-500/80">
+            <i class="ph-bold ph-check"></i> <span>Guardar</span>
           </button>
         </div>
-      </div>
-      <div>
-        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Margen de Ganancia Mínimo (%)</label>
-        <div class="relative">
-          <input type="number" step="1" id="filterMarginMin" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-500" placeholder="Ej. 15" oninput="preventNegative(this); applyCombinedFilters()">
-          <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">%</span>
-        </div>
-      </div>
-      <div>
-        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Imágenes</label>
-        <div class="grid grid-cols-3 gap-2">
-          <button onclick="toggleImageFilter('all')" id="image-filter-all" class="image-filter-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center border transition-all bg-indigo-500/10 border-indigo-500/80 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.1)]">
-            Todos
-          </button>
-          <button onclick="toggleImageFilter('hasImage')" id="image-filter-hasImage" class="image-filter-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center border transition-all bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
-            Con Imagen
-          </button>
-          <button onclick="toggleImageFilter('noImage')" id="image-filter-noImage" class="image-filter-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center border transition-all bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
-            Sin Imagen
-          </button>
-        </div>
-      </div>
-    </div>
-    
-    <div class="py-4 px-6 bg-slate-900/80 backdrop-blur-xl border-t border-slate-700/50 rounded-b-3xl mt-auto flex items-center gap-3">
-      <button onclick="applyFilters()" class="w-full py-3.5 px-4 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-transform active:scale-95 flex justify-center items-center gap-2 border border-indigo-500/80">
-        <i class="ph-bold ph-check"></i> Aplicar Filtros
-      </button>
+      </form>
     </div>
   </div>
-</div>
+
+  <!-- Tag Selector Modal (inline for product) -->
+  <div id="tagModal"
+    class="fixed inset-0 z-[60] hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div
+      class="bg-[#1e293b] w-full md:w-[350px] rounded-3xl flex flex-col shadow-2xl border border-slate-700/50 transform scale-95 opacity-0 transition-all duration-200"
+      id="tagModalContent">
+      <div class="px-5 py-4 border-b border-slate-700/50 flex justify-between items-center bg-[#1e293b] rounded-t-3xl">
+        <h2 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="ph-fill ph-tag text-indigo-400"></i> Seleccionar Etiquetas
+        </h2>
+        <button onclick="closeTagModal()" class="text-slate-400 hover:text-white transition-colors">
+          <i class="ph ph-x text-lg"></i>
+        </button>
+      </div>
+      <div class="p-4 flex flex-col gap-2 max-h-[40vh] overflow-y-auto no-scrollbar" id="tagListContainer"></div>
+      <div class="p-4 border-t border-slate-700/50 bg-slate-800/30 rounded-b-3xl flex flex-col gap-3">
+        <button type="button" onclick="closeTagModal()"
+          class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-600/30">
+          Listo
+        </button>
+        <div class="border-t border-slate-700/50 pt-3">
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Crear Nueva Etiqueta</p>
+          <div class="flex gap-2">
+            <input type="text" id="newTagName" placeholder="Nombre"
+              class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+            <input type="color" id="newTagColor" value="#6366f1"
+              class="w-10 h-10 p-0 border-0 rounded-xl cursor-pointer bg-transparent">
+            <button type="button" onclick="createNewTag()"
+              class="bg-indigo-600 text-white rounded-xl px-3 hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/30">
+              <i class="ph-bold ph-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Modal -->
+  <div id="filterModal"
+    class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4">
+    <div
+      class="bg-[#1e293b] w-full md:w-[480px] rounded-t-3xl md:rounded-3xl max-h-[90vh] flex flex-col transform transition-transform translate-y-full md:translate-y-0 duration-300 shadow-2xl border border-slate-700/50"
+      id="filterModalContent">
+      <div
+        class="px-6 py-5 border-b border-slate-700/50 flex justify-between items-center sticky top-0 bg-[#1e293b] rounded-t-3xl z-40">
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+          <i class="ph-fill ph-faders text-indigo-400"></i> Filtros de Inventario
+        </h2>
+        <div class="flex items-center gap-3">
+          <button onclick="clearAllFilters()"
+            class="text-xs font-semibold text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition-colors">
+            Limpiar
+          </button>
+          <button onclick="closeFilterModal()"
+            class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+            <i class="ph ph-x text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="p-6 overflow-y-auto no-scrollbar flex flex-col gap-6" style="max-height: calc(90vh - 150px);">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Filtrar por
+            Categoría</label>
+          <div class="flex flex-wrap gap-2" id="filterCategoryContainer"></div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Filtrar por
+            Proveedor</label>
+          <div class="flex flex-wrap gap-2" id="filterProviderContainer"></div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Filtrar por
+            Etiquetas</label>
+          <div class="flex flex-wrap gap-2" id="filterTagContainer"></div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Estado del
+            Stock</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="toggleStockFilter('all')" id="stock-filter-all"
+              class="stock-filter-btn py-2.5 px-4 rounded-xl text-xs font-bold text-left border flex items-center justify-between transition-all bg-indigo-500/10 border-indigo-500/80 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.1)]">
+              <span>Todos</span>
+              <i class="ph-fill ph-check-circle text-indigo-400 text-base"></i>
+            </button>
+            <button onclick="toggleStockFilter('inStock')" id="stock-filter-inStock"
+              class="stock-filter-btn py-2.5 px-4 rounded-xl text-xs font-bold text-left border flex items-center justify-between transition-all bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
+              <span>Con Stock (> 0)</span>
+              <i class="ph ph-circle text-base"></i>
+            </button>
+
+            <button onclick="toggleStockFilter('outOfStock')" id="stock-filter-outOfStock"
+              class="stock-filter-btn py-2.5 px-4 rounded-xl text-xs font-bold text-left border flex items-center justify-between transition-all bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
+              <span>Sin Stock (Agotado)</span>
+              <i class="ph ph-circle text-base"></i>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Margen de Ganancia
+            Mínimo (%)</label>
+          <div class="relative">
+            <input type="number" step="1" id="filterMarginMin"
+              class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all placeholder-slate-500"
+              placeholder="Ej. 15" oninput="preventNegative(this); applyCombinedFilters()">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">%</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Imágenes</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="toggleImageFilter('all')" id="image-filter-all"
+              class="image-filter-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center border transition-all bg-indigo-500/10 border-indigo-500/80 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.1)]">
+              Todos
+            </button>
+            <button onclick="toggleImageFilter('hasImage')" id="image-filter-hasImage"
+              class="image-filter-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center border transition-all bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
+              Con Imagen
+            </button>
+            <button onclick="toggleImageFilter('noImage')" id="image-filter-noImage"
+              class="image-filter-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center border transition-all bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200">
+              Sin Imagen
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="py-4 px-6 bg-slate-900/80 backdrop-blur-xl border-t border-slate-700/50 rounded-b-3xl mt-auto flex items-center gap-3">
+        <button onclick="applyFilters()"
+          class="w-full py-3.5 px-4 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-transform active:scale-95 flex justify-center items-center gap-2 border border-indigo-500/80">
+          <i class="ph-bold ph-check"></i> Aplicar Filtros
+        </button>
+      </div>
+    </div>
+  </div>

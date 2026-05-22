@@ -58,12 +58,30 @@ exports.getDashboardStats = async (req, res) => {
 
       // Agregación por etiqueta
       Product.aggregate([
-        { $match: { company: companyObjId, tag: { $ne: null } } },
-        { $lookup: { from: 'tags', localField: 'tag', foreignField: '_id', as: 'tagInfo' } },
+        { $match: { company: companyObjId } },
+        {
+          $addFields: {
+            allTags: {
+              $cond: {
+                if: { $and: [ { $isArray: '$tags' }, { $gt: [ { $size: '$tags' }, 0 ] } ] },
+                then: '$tags',
+                else: {
+                  $cond: {
+                    if: { $and: [ { $ne: [ '$tag', null ] }, { $ne: [ '$tag', undefined ] } ] },
+                    then: [ '$tag' ],
+                    else: []
+                  }
+                }
+              }
+            }
+          }
+        },
+        { $unwind: '$allTags' },
+        { $lookup: { from: 'tags', localField: 'allTags', foreignField: '_id', as: 'tagInfo' } },
         { $unwind: { path: '$tagInfo', preserveNullAndEmptyArrays: true } },
         {
           $group: {
-            _id: '$tag',
+            _id: '$allTags',
             name: { $first: '$tagInfo.name' },
             color: { $first: '$tagInfo.color' },
             count: { $sum: 1 },
@@ -106,11 +124,13 @@ exports.getDashboardStats = async (req, res) => {
         { $limit: 10 },
         { $lookup: { from: 'categories', localField: 'category', foreignField: '_id', as: 'categoryInfo' } },
         { $lookup: { from: 'tags', localField: 'tag', foreignField: '_id', as: 'tagInfo' } },
+        { $lookup: { from: 'tags', localField: 'tags', foreignField: '_id', as: 'tagsInfo' } },
         { $addFields: {
           category: { $arrayElemAt: ['$categoryInfo', 0] },
-          tag: { $arrayElemAt: ['$tagInfo', 0] }
+          tag: { $arrayElemAt: ['$tagInfo', 0] },
+          tags: '$tagsInfo'
         }},
-        { $project: { categoryInfo: 0, tagInfo: 0 } }
+        { $project: { categoryInfo: 0, tagInfo: 0, tagsInfo: 0 } }
       ]),
 
       // Total de unidades vendidas por producto
