@@ -4,6 +4,7 @@ let selectedBulkTag = null;
 let selectedProductIds = new Set();
 let pressTimer;
 let isLongPress = false;
+let bulkStockFilter = 'all';
 
 const colorPresets = ['#6366f1', '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'];
 
@@ -225,6 +226,26 @@ async function deleteTag(id) {
 
 // ---- Bulk Assignment ----
 
+function setBulkStockFilter(filter) {
+  bulkStockFilter = filter;
+  ['all', 'outOfStock', 'inStock'].forEach(type => {
+    const el = document.getElementById(`bulkStockFilter-${type}`);
+    if (!el) return;
+    if (type === filter) {
+      if (type === 'outOfStock') {
+        el.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-rose-500/15 border border-rose-500/80 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.15)] flex items-center gap-1';
+      } else if (type === 'inStock') {
+        el.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-emerald-500/15 border border-emerald-500/80 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)] flex items-center gap-1';
+      } else {
+        el.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-indigo-500/15 border border-indigo-500/80 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.15)] flex items-center gap-1';
+      }
+    } else {
+      el.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800/40 border border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200 flex items-center gap-1';
+    }
+  });
+  renderBulkProducts(document.getElementById('bulkSearchInput').value);
+}
+
 function renderBulkTagSelector() {
   const container = document.getElementById('bulkTagSelector');
   container.innerHTML = '';
@@ -280,6 +301,12 @@ function renderBulkProducts(filterQuery = '') {
     products = products.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.sku && p.sku.toLowerCase().includes(q)));
   }
 
+  if (bulkStockFilter === 'outOfStock') {
+    products = products.filter(p => p.stock === 0);
+  } else if (bulkStockFilter === 'inStock') {
+    products = products.filter(p => p.stock > 0);
+  }
+
   if (products.length === 0) {
     container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-500 text-sm">No se encontraron productos</div>';
     return;
@@ -289,6 +316,10 @@ function renderBulkProducts(filterQuery = '') {
     const isSelected = selectedProductIds.has(product._id);
     const currentTagName = product.tag && product.tag.name ? product.tag.name : 'Sin etiqueta';
     const currentTagColor = product.tag && product.tag.color ? product.tag.color : '#64748b';
+    const isOut = product.stock === 0;
+    const stockBadge = isOut 
+      ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/10 border border-rose-500/20 text-rose-400"><span class="w-1 h-1 rounded-full bg-rose-500 animate-pulse"></span>Sin stock</span>`
+      : `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-800 border border-slate-700/60 text-slate-400">Stock: ${product.stock}</span>`;
 
     container.insertAdjacentHTML('beforeend', `
       <div onclick="toggleProductSelection('${product._id}')" class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-indigo-500/10 border-indigo-500/50 shadow-[0_0_10px_rgba(99,102,241,0.1)]' : 'bg-slate-800/30 border-slate-700/30 hover:border-slate-600'}">
@@ -297,12 +328,13 @@ function renderBulkProducts(filterQuery = '') {
         </div>
         <div class="flex-1 min-w-0">
           <p class="text-sm font-semibold text-white truncate">${product.name}</p>
-          <div class="flex items-center gap-2 mt-0.5">
+          <div class="flex flex-wrap items-center gap-2 mt-1">
             <span class="inline-flex items-center gap-1 text-[10px] font-bold" style="color: ${currentTagColor};">
               <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${currentTagColor};"></span>
               ${currentTagName}
             </span>
-            ${product.sku ? `<span class="text-[10px] text-slate-500">SKU: ${product.sku}</span>` : ''}
+            ${product.sku ? `<span class="text-[10px] text-slate-500 bg-slate-800/50 px-1 rounded">SKU: ${product.sku}</span>` : ''}
+            ${stockBadge}
           </div>
         </div>
       </div>
@@ -322,6 +354,12 @@ function toggleSelectAll() {
   const q = document.getElementById('bulkSearchInput').value.toLowerCase();
   let visibleProducts = currentProducts;
   if (q) visibleProducts = visibleProducts.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.sku && p.sku.toLowerCase().includes(q)));
+
+  if (bulkStockFilter === 'outOfStock') {
+    visibleProducts = visibleProducts.filter(p => p.stock === 0);
+  } else if (bulkStockFilter === 'inStock') {
+    visibleProducts = visibleProducts.filter(p => p.stock > 0);
+  }
 
   const allSelected = visibleProducts.every(p => selectedProductIds.has(p._id));
   if (allSelected) {

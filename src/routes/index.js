@@ -10,6 +10,7 @@ const { getCompany, updateCompany } = require('../controllers/companyController'
 const { getProviders, createProvider, updateProvider, deleteProvider } = require('../controllers/providerController');
 const { getDashboardStats } = require('../controllers/dashboardController');
 const { getSales, createSale, getSaleById, deleteSale, getSalesStats } = require('../controllers/saleController');
+const { getPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod, adjustBalance, getPaymentMethodsSummary } = require('../controllers/paymentMethodController');
 
 const { protect, authorize } = require('../middlewares/auth');
 const upload = require('../middlewares/upload');
@@ -66,6 +67,17 @@ router.get('/api/sales/stats', protect, getSalesStats);
 router.route('/api/sales/:id')
   .get(protect, getSaleById)
   .delete(protect, authorize('Super Admin', 'Administrador'), deleteSale);
+
+// Métodos de Pago (Caja)
+router.get('/api/payment-methods/summary', protect, getPaymentMethodsSummary);
+router.route('/api/payment-methods')
+  .get(protect, getPaymentMethods)
+  .post(protect, authorize('Super Admin', 'Administrador'), createPaymentMethod);
+
+router.put('/api/payment-methods/:id/adjust', protect, authorize('Super Admin', 'Administrador'), adjustBalance);
+router.route('/api/payment-methods/:id')
+  .put(protect, authorize('Super Admin', 'Administrador'), updatePaymentMethod)
+  .delete(protect, authorize('Super Admin', 'Administrador'), deletePaymentMethod);
 
 // Categorías
 router.route('/api/categories')
@@ -157,6 +169,16 @@ router.get('/ventas', protect, (req, res) => {
     currentPage: 'ventas', 
     pageTitle: 'Ventas',
     pageScript: 'ventas'
+  });
+});
+
+// Caja (Métodos de Pago)
+router.get('/caja', protect, (req, res) => {
+  res.render('pages/caja', { 
+    user: req.user, 
+    currentPage: 'caja', 
+    pageTitle: 'Caja',
+    pageScript: 'caja'
   });
 });
 

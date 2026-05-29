@@ -1,0 +1,223 @@
+<% layout('layout') -%>
+<header class="mb-6 md:mb-8 flex flex-col md:flex-row justify-between md:items-end gap-4">
+  <div>
+    <h2 class="text-2xl md:text-3xl font-bold text-white mb-1 flex items-center gap-3">
+      <span class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-lg shadow-lg shadow-amber-500/30">
+        <i class="ph-fill ph-wallet"></i>
+      </span>
+      Caja
+    </h2>
+    <p class="text-slate-400 text-sm">Gestión de métodos de pago y saldos</p>
+  </div>
+  <% if (user.role === 'Super Admin' || user.role === 'Administrador') { %>
+  <div class="flex items-center gap-2">
+    <button onclick="openMethodModal()" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg hover:shadow-amber-500/25 transition-all active:scale-95">
+      <i class="ph-fill ph-plus-circle text-lg"></i> Nuevo Método
+    </button>
+  </div>
+  <% } %>
+</header>
+
+<!-- ═══════════════ TOTAL CAJA KPI ═══════════════ -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-6">
+  <!-- Total en Caja -->
+  <div class="glass-card rounded-2xl p-5 md:p-6 flex items-center gap-4 relative overflow-hidden group card-hover cursor-default lg:col-span-1">
+    <div class="absolute -right-6 -top-6 w-28 h-28 bg-amber-500/10 rounded-full blur-3xl group-hover:bg-amber-500/15 transition-all"></div>
+    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-amber-400 flex items-center justify-center text-2xl shrink-0 border border-amber-500/10">
+      <i class="ph-fill ph-vault"></i>
+    </div>
+    <div class="min-w-0">
+      <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Total en Caja</p>
+      <h3 class="text-2xl md:text-3xl font-bold text-white tracking-tight" id="kpi-total-caja">
+        <span class="skeleton-text w-28 h-8"></span>
+      </h3>
+      <p class="text-[10px] text-slate-500 mt-0.5">Suma de todos los métodos de pago</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAYMENT METHODS CARDS ═══════════════ -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6" id="paymentMethodsCards">
+  <!-- Skeleton cards -->
+  <div class="glass-card rounded-2xl p-5 animate-pulse">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-xl bg-slate-700/50"></div>
+      <div class="h-4 w-20 bg-slate-700/50 rounded-lg"></div>
+    </div>
+    <div class="h-7 w-28 bg-slate-700/50 rounded-lg"></div>
+  </div>
+  <div class="glass-card rounded-2xl p-5 animate-pulse">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-xl bg-slate-700/50"></div>
+      <div class="h-4 w-20 bg-slate-700/50 rounded-lg"></div>
+    </div>
+    <div class="h-7 w-28 bg-slate-700/50 rounded-lg"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAYMENT METHODS TABLE ═══════════════ -->
+<div class="glass-card rounded-2xl overflow-hidden">
+  <div class="p-5 md:p-6 border-b border-slate-700/30 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center border border-amber-500/10">
+        <i class="ph-fill ph-list-bullets text-lg"></i>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-white">Métodos de Pago</h4>
+        <p class="text-[10px] text-slate-500">Detalle de cada método y su saldo actual</p>
+      </div>
+    </div>
+    <button onclick="loadPaymentMethods()" class="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-white transition-all border border-slate-700/50 hover:border-amber-500/30 group" title="Actualizar">
+      <i class="ph ph-arrows-clockwise text-lg group-hover:animate-spin"></i>
+    </button>
+  </div>
+
+  <!-- Table Header (desktop) -->
+  <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-3 border-b border-slate-700/30 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+    <div class="col-span-1">Icono</div>
+    <div class="col-span-3">Nombre</div>
+    <div class="col-span-2">Color</div>
+    <div class="col-span-3">Saldo Actual</div>
+    <div class="col-span-3 text-right">Acciones</div>
+  </div>
+
+  <div id="methodsListContainer" class="divide-y divide-slate-800/50">
+    <!-- Populated by JS -->
+    <div class="p-6 text-center text-slate-500">
+      <div class="flex flex-col items-center justify-center py-8">
+        <i class="ph-duotone ph-wallet text-4xl text-slate-600 mb-3"></i>
+        <p class="text-sm font-medium">Cargando métodos de pago...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ADJUSTMENT HISTORY ═══════════════ -->
+<div class="glass-card rounded-2xl overflow-hidden mt-4">
+  <div class="p-5 md:p-6 border-b border-slate-700/30 flex items-center gap-3">
+    <div class="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center border border-blue-500/10">
+      <i class="ph-fill ph-clock-counter-clockwise text-lg"></i>
+    </div>
+    <div>
+      <h4 class="text-sm font-bold text-white">Historial de Ajustes</h4>
+      <p class="text-[10px] text-slate-500">Últimas correcciones manuales de saldo</p>
+    </div>
+  </div>
+  <div id="adjustmentHistory" class="p-4 md:p-6 space-y-2 max-h-[350px] overflow-y-auto no-scrollbar">
+    <div class="flex flex-col items-center justify-center py-8 text-center">
+      <i class="ph-duotone ph-check-circle text-3xl text-slate-600 mb-2"></i>
+      <p class="text-sm text-slate-400 font-medium">Sin ajustes registrados</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ CREATE/EDIT METHOD MODAL ═══════════════ -->
+<div id="methodModal" class="fixed inset-0 z-[60] hidden">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeMethodModal()"></div>
+  <div class="absolute inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-md bg-slate-900 border border-slate-700/50 rounded-3xl overflow-hidden flex flex-col max-h-[90vh]">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-5 border-b border-slate-800/50 shrink-0">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2" id="methodModalTitle">
+        <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white text-sm shadow-lg">
+          <i class="ph-fill ph-wallet"></i>
+        </span>
+        Nuevo Método de Pago
+      </h3>
+      <button onclick="closeMethodModal()" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+        <i class="ph ph-x text-lg"></i>
+      </button>
+    </div>
+    <!-- Body -->
+    <form id="methodForm" class="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4">
+      <input type="hidden" id="methodId">
+
+      <div>
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Nombre del Método</label>
+        <input type="text" id="methodName" required placeholder="Ej. Efectivo, Nequi..." class="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all">
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Icono Phosphor</label>
+          <div class="relative">
+            <select id="methodIcon" class="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer" style="color-scheme: dark;">
+              <option value="ph-money">💵 Efectivo</option>
+              <option value="ph-device-mobile">📱 Móvil</option>
+              <option value="ph-device-mobile-camera">📲 Móvil Alt</option>
+              <option value="ph-credit-card">💳 Tarjeta</option>
+              <option value="ph-wallet">👛 Billetera</option>
+              <option value="ph-bank">🏦 Banco</option>
+              <option value="ph-hand-coins">🪙 Monedas</option>
+              <option value="ph-currency-dollar">💲 Dólar</option>
+              <option value="ph-qr-code">📷 QR Code</option>
+              <option value="ph-link">🔗 Link</option>
+            </select>
+            <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+          </div>
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Color</label>
+          <div class="flex items-center gap-2">
+            <input type="color" id="methodColor" value="#10b981" class="w-12 h-12 p-0 border-0 rounded-xl cursor-pointer bg-transparent">
+            <span class="text-xs text-slate-400" id="methodColorHex">#10b981</span>
+          </div>
+        </div>
+      </div>
+    </form>
+    <!-- Footer -->
+    <div class="p-5 border-t border-slate-800/50 shrink-0 flex gap-3">
+      <button type="button" onclick="closeMethodModal()" class="flex-1 py-3 rounded-xl font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors text-sm">Cancelar</button>
+      <button type="button" onclick="submitMethod()" id="methodSubmitBtn" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm hover:shadow-lg hover:shadow-amber-500/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+        <i class="ph-fill ph-check-circle text-lg"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ADJUST BALANCE MODAL ═══════════════ -->
+<div id="adjustModal" class="fixed inset-0 z-[60] hidden">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeAdjustModal()"></div>
+  <div class="absolute inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-md bg-slate-900 border border-slate-700/50 rounded-3xl overflow-hidden flex flex-col max-h-[80vh]">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-5 border-b border-slate-800/50 shrink-0">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm shadow-lg">
+          <i class="ph-fill ph-pencil-simple-line"></i>
+        </span>
+        <span id="adjustModalTitle">Ajustar Saldo</span>
+      </h3>
+      <button onclick="closeAdjustModal()" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+        <i class="ph ph-x text-lg"></i>
+      </button>
+    </div>
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4">
+      <input type="hidden" id="adjustMethodId">
+
+      <div class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/30">
+        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Saldo Actual</p>
+        <p class="text-xl font-bold text-white" id="adjustCurrentBalance">$0</p>
+      </div>
+
+      <div>
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Nuevo Saldo</label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400 font-medium">$</span>
+          <input type="text" inputmode="numeric" id="adjustNewBalance" required placeholder="0" class="w-full pl-8 pr-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all" oninput="formatCurrency(this)">
+        </div>
+      </div>
+
+      <div>
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Motivo del Ajuste</label>
+        <textarea id="adjustReason" rows="2" placeholder="Ej. Conteo de caja, retiro parcial..." class="w-full px-4 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-amber-500/50 resize-none transition-all"></textarea>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div class="p-5 border-t border-slate-800/50 shrink-0 flex gap-3">
+      <button type="button" onclick="closeAdjustModal()" class="flex-1 py-3 rounded-xl font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors text-sm">Cancelar</button>
+      <button type="button" onclick="submitAdjust()" id="adjustSubmitBtn" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold text-sm hover:shadow-lg hover:shadow-blue-500/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+        <i class="ph-fill ph-check-circle text-lg"></i> Confirmar Ajuste
+      </button>
+    </div>
+  </div>
+</div>

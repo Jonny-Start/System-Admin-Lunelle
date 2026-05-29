@@ -11,6 +11,7 @@ let paymentChart = null;
 document.addEventListener('DOMContentLoaded', () => {
   loadSalesStats();
   loadSales();
+  loadPaymentMethodFilter();
 
   // Debounced search
   let searchTimer;
@@ -24,6 +25,28 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('salesDateTo').addEventListener('change', () => { salesCurrentPage = 1; loadSales(); });
   document.getElementById('salesPaymentFilter').addEventListener('change', () => { salesCurrentPage = 1; loadSales(); });
 });
+
+// ── Load Payment Method Filter Options ─────────────────────────────
+let paymentMethodsMap = {};
+async function loadPaymentMethodFilter() {
+  try {
+    const res = await fetch('/api/payment-methods');
+    const json = await res.json();
+    if (!json.success) return;
+    const select = document.getElementById('salesPaymentFilter');
+    // Keep the first "Todos" option
+    const firstOpt = select.querySelector('option[value=""]');
+    select.innerHTML = '';
+    select.appendChild(firstOpt);
+    json.data.forEach(m => {
+      paymentMethodsMap[m.name] = { icon: m.icon, color: m.color };
+      const opt = document.createElement('option');
+      opt.value = m.name;
+      opt.textContent = m.name;
+      select.appendChild(opt);
+    });
+  } catch (e) { console.error(e); }
+}
 
 // ── Load Stats + Charts ────────────────────────────────────────────
 async function loadSalesStats() {

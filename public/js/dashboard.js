@@ -7,6 +7,9 @@ let chartInstances = {};
 let investmentFilters = { categories: [], tags: [] };
 let analysisMode = 'current'; // 'current' = bodega actual, 'historical' = todo lo comprado
 
+let includeCajaInInvestment = localStorage.getItem('includeCajaInInvestment') === 'true';
+let totalCajaBalance = 0;
+
 // ─── Helpers ───
 function fmtMoney(v) {
   return '$' + Math.round(v || 0).toLocaleString('es-CO');
@@ -21,7 +24,10 @@ const CHART_COLORS = [
 ];
 
 // ─── Init ───
-document.addEventListener('DOMContentLoaded', () => loadDashboard());
+document.addEventListener('DOMContentLoaded', () => {
+  updateCajaInclusionUI();
+  loadDashboard();
+});
 
 async function loadDashboard() {
   try {
@@ -36,10 +42,47 @@ async function loadDashboard() {
     renderAlerts();
     renderRecent();
     loadDashboardSales();
+    loadCajaSummary();
     document.getElementById('lastUpdate').textContent =
       new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
   } catch (e) {
     console.error('Dashboard load error:', e);
+  }
+}
+
+// ─── Caja Inclusion Functions ───
+function toggleCajaInclusion(checked) {
+  if (checked !== undefined) {
+    includeCajaInInvestment = checked;
+  } else {
+    includeCajaInInvestment = !includeCajaInInvestment;
+  }
+  localStorage.setItem('includeCajaInInvestment', includeCajaInInvestment);
+  
+  updateCajaInclusionUI();
+
+  // Re-render financial KPIs or recalculate
+  const fc = investmentFilters.categories;
+  const ft = investmentFilters.tags;
+  if (fc.length > 0 || ft.length > 0) {
+    recalcInvestment();
+  } else {
+    renderFinancialKPIs();
+  }
+}
+
+function updateCajaInclusionUI() {
+  const btn = document.getElementById('kpi-investment-icon-container');
+  const checkbox = document.getElementById('check-include-caja');
+  if (btn) {
+    if (includeCajaInInvestment) {
+      btn.className = "w-10 h-10 rounded-xl bg-amber-500 text-slate-900 hover:bg-amber-400 active:scale-95 transition-all flex items-center justify-center text-lg border border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.4)] cursor-pointer shrink-0";
+    } else {
+      btn.className = "w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 active:scale-95 transition-all flex items-center justify-center text-lg border border-amber-500/10 cursor-pointer shrink-0";
+    }
+  }
+  if (checkbox) {
+    checkbox.checked = includeCajaInInvestment;
   }
 }
 
@@ -79,7 +122,9 @@ function renderFinancialKPIs() {
   const profit     = isCurrent ? k.currentProfit      : k.historicalProfit;
   const margin     = isCurrent ? k.currentMargin      : k.historicalMargin;
 
-  document.getElementById('kpi-investment').textContent = fmtMoney(investment);
+  const finalInvestment = includeCajaInInvestment ? (investment + totalCajaBalance) : investment;
+
+  document.getElementById('kpi-investment').textContent = fmtMoney(finalInvestment);
   document.getElementById('kpi-sale-value').textContent = fmtMoney(saleValue);
   document.getElementById('kpi-potential-profit').textContent = fmtMoney(profit);
   document.getElementById('kpi-avg-margin').textContent = margin.toFixed(1);
@@ -94,16 +139,20 @@ function renderFinancialKPIs() {
   const profitFormula = document.getElementById('kpi-profit-formula');
 
   if (isCurrent) {
-    invTitle.textContent = 'Inversión en Bodega';
-    invFormula.innerHTML = '<i class="ph ph-info text-sm"></i> Costo × stock actual';
+    invTitle.textContent = includeCajaInInvestment ? 'Inversión Total (Bodega + Caja)' : 'Inversión en Bodega';
+    invFormula.innerHTML = includeCajaInInvestment
+      ? `<i class="ph ph-plus text-xs"></i> Bodega (${fmtMoney(investment)}) + Caja (${fmtMoney(totalCajaBalance)})`
+      : '<i class="ph ph-info text-sm"></i> Costo × stock actual';
     saleTitle.textContent = 'Valor de Venta';
     saleDesc.textContent = 'Si se vende todo el inventario';
     saleFormula.innerHTML = '<i class="ph ph-trend-up text-sm"></i> Precio venta × stock actual';
     profitTitle.textContent = 'Ganancia Potencial';
     profitFormula.innerHTML = '<i class="ph ph-equals text-sm"></i> Valor venta − Inversión';
   } else {
-    invTitle.textContent = 'Inversión Histórica';
-    invFormula.innerHTML = '<i class="ph ph-clock-counter-clockwise text-sm"></i> Costo × (stock + vendidos)';
+    invTitle.textContent = includeCajaInInvestment ? 'Inversión Histórica + Caja' : 'Inversión Histórica';
+    invFormula.innerHTML = includeCajaInInvestment
+      ? `<i class="ph ph-plus text-xs"></i> Histórico (${fmtMoney(investment)}) + Caja (${fmtMoney(totalCajaBalance)})`
+      : '<i class="ph ph-clock-counter-clockwise text-sm"></i> Costo × (stock + vendidos)';
     saleTitle.textContent = 'Valor Total Generado';
     saleDesc.textContent = 'Incluye stock actual y unidades vendidas';
     saleFormula.innerHTML = '<i class="ph ph-trend-up text-sm"></i> Precio × (stock + vendidos)';
@@ -178,8 +227,9 @@ function recalcInvestment() {
       products = products.filter(p => p.tag && ft.includes(p.tag._id || p.tag));
     }
 
-    const total = products.reduce((s, p) => s + ((p.purchasePrice||0) * (p.stock||0)), 0);
-    document.getElementById('kpi-investment').textContent = fmtMoney(total);
+    const baseTotal = products.reduce((s, p) => s + ((p.purchasePrice||0) * (p.stock||0)), 0);
+    const finalTotal = includeCajaInInvestment ? (baseTotal + totalCajaBalance) : baseTotal;
+    document.getElementById('kpi-investment').textContent = fmtMoney(finalTotal);
 
     const label = document.getElementById('investment-filter-label');
     if (fc.length || ft.length) {
@@ -189,6 +239,16 @@ function recalcInvestment() {
       label.textContent = `Filtrado: ${parts.join(', ')}`;
     } else {
       label.textContent = 'Todos los productos';
+    }
+
+    // Actualizar fórmula detallada
+    const invFormula = document.getElementById('kpi-investment-formula');
+    if (invFormula) {
+      if (includeCajaInInvestment) {
+        invFormula.innerHTML = `<i class="ph ph-plus text-xs"></i> Filtrado (${fmtMoney(baseTotal)}) + Caja (${fmtMoney(totalCajaBalance)})`;
+      } else {
+        invFormula.innerHTML = '<i class="ph ph-info text-sm"></i> Costo × stock actual (filtrado)';
+      }
     }
   });
 }
@@ -480,5 +540,55 @@ async function loadDashboardSales() {
     document.getElementById('dash-sales-month-profit').innerHTML = `<i class="ph ph-trend-up text-sm"></i> Ganancia: ${fmtMoney(d.month.profit)}`;
   } catch (e) {
     console.error('Sales KPI load error:', e);
+  }
+}
+
+// ─── Caja Summary (Dashboard) ───
+async function loadCajaSummary() {
+  try {
+    const res = await fetch('/api/payment-methods/summary');
+    const json = await res.json();
+    if (!json.success) return;
+    const { methods, totalBalance } = json.data;
+
+    totalCajaBalance = totalBalance;
+    document.getElementById('dash-caja-total').textContent = fmtMoney(totalBalance);
+
+    // Refresh investment card if Caja is included
+    if (includeCajaInInvestment) {
+      const fc = investmentFilters.categories;
+      const ft = investmentFilters.tags;
+      if (fc.length > 0 || ft.length > 0) {
+        recalcInvestment();
+      } else {
+        renderFinancialKPIs();
+      }
+    }
+
+    const container = document.getElementById('dash-caja-methods');
+    if (!methods.length) {
+      container.innerHTML = `
+        <div class="glass-card rounded-2xl p-4 col-span-full flex items-center justify-center">
+          <p class="text-xs text-slate-500">No hay métodos configurados</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = methods.map(m => {
+      const isNegative = m.balance < 0;
+      return `
+      <div class="glass-card rounded-2xl p-4 relative overflow-hidden group card-hover cursor-pointer" onclick="window.location.href='/caja'">
+        <div class="absolute -right-3 -top-3 w-16 h-16 rounded-full blur-2xl transition-all" style="background: ${m.color}10;"></div>
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0 border" style="background: ${m.color}15; color: ${m.color}; border-color: ${m.color}20;">
+            <i class="ph-fill ${m.icon}"></i>
+          </div>
+          <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">${m.name}</p>
+        </div>
+        <h3 class="text-lg font-bold tracking-tight ${isNegative ? 'text-red-400' : 'text-white'}">${fmtMoney(m.balance)}</h3>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('Caja summary load error:', e);
   }
 }

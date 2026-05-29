@@ -60,6 +60,22 @@
       <input type="text" id="bulkSearchInput" placeholder="Buscar producto..." class="w-full h-[44px] bg-slate-800/60 border border-slate-700/50 rounded-xl pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-slate-500 text-white">
     </div>
 
+    <!-- Filters inside bulk -->
+    <div class="flex flex-wrap items-center gap-2 mb-4 bg-slate-800/20 p-2.5 rounded-2xl border border-slate-700/30">
+      <span class="text-xs text-slate-400 font-bold uppercase tracking-wider pl-1.5 flex items-center gap-1.5 mr-1 select-none">
+        <i class="ph-bold ph-funnel text-indigo-400"></i> Stock:
+      </span>
+      <button type="button" onclick="setBulkStockFilter('all')" id="bulkStockFilter-all" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-indigo-500/15 border border-indigo-500/80 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.15)] flex items-center gap-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> Todos
+      </button>
+      <button type="button" onclick="setBulkStockFilter('outOfStock')" id="bulkStockFilter-outOfStock" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800/40 border border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200 flex items-center gap-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Sin Stock
+      </button>
+      <button type="button" onclick="setBulkStockFilter('inStock')" id="bulkStockFilter-inStock" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800/40 border border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-200 flex items-center gap-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Con Stock
+      </button>
+    </div>
+
     <div id="bulkProductList" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto no-scrollbar">
       <!-- rendered dynamically -->
     </div>

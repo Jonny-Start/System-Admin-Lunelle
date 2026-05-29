@@ -1,5 +1,6 @@
 const Sale = require('../models/Sale');
 const Product = require('../models/Product');
+const PaymentMethod = require('../models/PaymentMethod');
 const mongoose = require('mongoose');
 
 // @desc    Registrar nueva venta (descuenta stock automáticamente)
@@ -82,6 +83,17 @@ exports.createSale = async (req, res) => {
       seller: req.user._id,
       company: req.user.company
     }], { session });
+
+    // Update PaymentMethod balance
+    const pmUpdate = await PaymentMethod.findOneAndUpdate(
+      { name: paymentMethod, company: req.user.company, isActive: true },
+      { $inc: { balance: total } },
+      { session }
+    );
+    // If payment method doesn't exist yet, log a warning but don't block the sale
+    if (!pmUpdate) {
+      console.warn(`PaymentMethod "${paymentMethod}" not found for company ${req.user.company}. Balance not updated.`);
+    }
 
     await session.commitTransaction();
 
@@ -206,6 +218,13 @@ exports.deleteSale = async (req, res) => {
         await product.save({ session });
       }
     }
+
+    // Revert PaymentMethod balance
+    await PaymentMethod.findOneAndUpdate(
+      { name: sale.paymentMethod, company: req.user.company, isActive: true },
+      { $inc: { balance: -sale.total } },
+      { session }
+    );
 
     await sale.deleteOne({ session });
     await session.commitTransaction();

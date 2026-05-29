@@ -44,6 +44,9 @@
       <a href="/ventas" id="nav-ventas" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 text-left font-medium no-underline <%= currentPage === 'ventas' ? 'active' : '' %>">
         <i class="ph ph-receipt text-xl"></i> Ventas
       </a>
+      <a href="/caja" id="nav-caja" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 text-left font-medium no-underline <%= currentPage === 'caja' ? 'active' : '' %>">
+        <i class="ph ph-wallet text-xl"></i> Caja
+      </a>
       <a href="/categorias" id="nav-categorias" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 text-left font-medium no-underline <%= currentPage === 'categorias' ? 'active' : '' %>">
         <i class="ph ph-tag text-xl"></i> Categorías
       </a>
@@ -115,8 +118,8 @@
         <i class="ph-fill ph-tag text-2xl mb-0.5"></i>
         <span class="text-[10px] font-semibold">Categorías</span>
       </a>
-      <button id="moreMenuBtn" class="nav-item-mobile flex flex-col items-center py-1 px-3 <%= ['etiquetas','usuarios','empresa','proveedores'].includes(currentPage) ? 'text-indigo-400' : 'text-slate-500' %> hover:text-indigo-400 transition-colors relative bg-transparent border-none cursor-pointer">
-        <% if (['etiquetas','usuarios','empresa','proveedores'].includes(currentPage)) { %><div class="absolute -top-1 w-8 h-1 bg-indigo-500 rounded-full"></div><% } %>
+      <button id="moreMenuBtn" class="nav-item-mobile flex flex-col items-center py-1 px-3 <%= ['etiquetas','usuarios','empresa','proveedores','caja'].includes(currentPage) ? 'text-indigo-400' : 'text-slate-500' %> hover:text-indigo-400 transition-colors relative bg-transparent border-none cursor-pointer">
+        <% if (['etiquetas','usuarios','empresa','proveedores','caja'].includes(currentPage)) { %><div class="absolute -top-1 w-8 h-1 bg-indigo-500 rounded-full"></div><% } %>
         <i class="ph-fill ph-dots-three-circle text-2xl mb-0.5"></i>
         <span class="text-[10px] font-semibold">Más</span>
       </button>
@@ -148,6 +151,16 @@
             <div class="flex-1">
               <p class="text-sm font-semibold m-0">Proveedores</p>
               <p class="text-xs text-slate-500 m-0 mt-0.5">Gestionar proveedores</p>
+            </div>
+            <i class="ph ph-caret-right text-slate-600"></i>
+          </a>
+          <a href="/caja" class="more-menu-item flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all no-underline <%= currentPage === 'caja' ? 'bg-amber-500/15 text-amber-400' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' %>">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 <%= currentPage === 'caja' ? 'bg-amber-500/20' : 'bg-slate-800' %>">
+              <i class="ph-fill ph-wallet text-xl"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold m-0">Caja</p>
+              <p class="text-xs text-slate-500 m-0 mt-0.5">Métodos de pago y saldos</p>
             </div>
             <i class="ph ph-caret-right text-slate-600"></i>
           </a>
@@ -250,18 +263,8 @@
         <div>
           <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Método de Pago</label>
           <div class="grid grid-cols-2 gap-2" id="qsPaymentMethods">
-            <button type="button" onclick="selectPaymentMethod('Efectivo')" data-method="Efectivo" class="qs-payment-btn flex items-center gap-2.5 p-3 rounded-xl border border-slate-700/50 bg-slate-800/30 text-slate-400 hover:border-emerald-500/30 hover:text-emerald-400 transition-all text-sm font-semibold">
-              <i class="ph-fill ph-money text-lg"></i> Efectivo
-            </button>
-            <button type="button" onclick="selectPaymentMethod('Nequi')" data-method="Nequi" class="qs-payment-btn flex items-center gap-2.5 p-3 rounded-xl border border-slate-700/50 bg-slate-800/30 text-slate-400 hover:border-violet-500/30 hover:text-violet-400 transition-all text-sm font-semibold">
-              <i class="ph-fill ph-device-mobile text-lg"></i> Nequi
-            </button>
-            <button type="button" onclick="selectPaymentMethod('Daviplata')" data-method="Daviplata" class="qs-payment-btn flex items-center gap-2.5 p-3 rounded-xl border border-slate-700/50 bg-slate-800/30 text-slate-400 hover:border-orange-500/30 hover:text-orange-400 transition-all text-sm font-semibold">
-              <i class="ph-fill ph-device-mobile-camera text-lg"></i> Daviplata
-            </button>
-            <button type="button" onclick="selectPaymentMethod('Datafono')" data-method="Datafono" class="qs-payment-btn flex items-center gap-2.5 p-3 rounded-xl border border-slate-700/50 bg-slate-800/30 text-slate-400 hover:border-sky-500/30 hover:text-sky-400 transition-all text-sm font-semibold">
-              <i class="ph-fill ph-credit-card text-lg"></i> Datafono
-            </button>
+            <!-- Dynamically populated from API -->
+            <div class="col-span-2 text-center py-3 text-xs text-slate-500">Cargando métodos...</div>
           </div>
         </div>
 
@@ -342,10 +345,15 @@
         b.classList.remove('border-emerald-500/50', 'bg-emerald-500/10', 'text-emerald-400',
           'border-violet-500/50', 'bg-violet-500/10', 'text-violet-400',
           'border-orange-500/50', 'bg-orange-500/10', 'text-orange-400',
-          'border-sky-500/50', 'bg-sky-500/10', 'text-sky-400');
+          'border-sky-500/50', 'bg-sky-500/10', 'text-sky-400',
+          'qs-payment-active');
+        b.style.borderColor = '';
+        b.style.backgroundColor = '';
+        b.style.color = '';
       });
       document.getElementById('quickSaleModal').classList.remove('hidden');
       loadQsProducts();
+      loadQsPaymentMethods();
       setTimeout(() => document.getElementById('qsProductSearch').focus(), 200);
     }
 
@@ -359,6 +367,32 @@
         const json = await res.json();
         if (json.success) qsProducts = json.data.filter(p => p.stock > 0);
       } catch (e) { console.error(e); }
+    }
+
+    // Load payment methods dynamically for Quick Sale
+    let qsPaymentMethodsList = [];
+    async function loadQsPaymentMethods() {
+      try {
+        const res = await fetch('/api/payment-methods');
+        const json = await res.json();
+        if (json.success) {
+          qsPaymentMethodsList = json.data;
+          renderQsPaymentMethods();
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function renderQsPaymentMethods() {
+      const container = document.getElementById('qsPaymentMethods');
+      if (!qsPaymentMethodsList.length) {
+        container.innerHTML = '<div class="col-span-2 text-center py-3 text-xs text-slate-500">No hay métodos de pago</div>';
+        return;
+      }
+      container.innerHTML = qsPaymentMethodsList.map(m => `
+        <button type="button" onclick="selectPaymentMethod('${m.name}')" data-method="${m.name}" data-color="${m.color}" class="qs-payment-btn flex items-center gap-2.5 p-3 rounded-xl border border-slate-700/50 bg-slate-800/30 text-slate-400 hover:border-slate-500/50 hover:text-slate-200 transition-all text-sm font-semibold">
+          <i class="ph-fill ${m.icon} text-lg" style="color: ${m.color}"></i> ${m.name}
+        </button>
+      `).join('');
     }
 
     // Product search
@@ -479,23 +513,20 @@
 
     function selectPaymentMethod(method) {
       qsSelectedPayment = method;
-      const colorMap = {
-        'Efectivo': { border: 'border-emerald-500/50', bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
-        'Nequi': { border: 'border-violet-500/50', bg: 'bg-violet-500/10', text: 'text-violet-400' },
-        'Daviplata': { border: 'border-orange-500/50', bg: 'bg-orange-500/10', text: 'text-orange-400' },
-        'Datafono': { border: 'border-sky-500/50', bg: 'bg-sky-500/10', text: 'text-sky-400' }
-      };
 
       document.querySelectorAll('.qs-payment-btn').forEach(btn => {
         const m = btn.dataset.method;
-        btn.classList.remove('border-emerald-500/50', 'bg-emerald-500/10', 'text-emerald-400',
-          'border-violet-500/50', 'bg-violet-500/10', 'text-violet-400',
-          'border-orange-500/50', 'bg-orange-500/10', 'text-orange-400',
-          'border-sky-500/50', 'bg-sky-500/10', 'text-sky-400');
+        const color = btn.dataset.color || '#6366f1';
+        btn.classList.remove('qs-payment-active');
+        btn.style.borderColor = '';
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
 
         if (m === method) {
-          const c = colorMap[method];
-          btn.classList.add(c.border, c.bg, c.text);
+          btn.classList.add('qs-payment-active');
+          btn.style.borderColor = color + '80';
+          btn.style.backgroundColor = color + '15';
+          btn.style.color = color;
         }
       });
 
@@ -537,6 +568,7 @@
           if (typeof loadSales === 'function') loadSales();
           if (typeof loadSalesStats === 'function') loadSalesStats();
           if (typeof loadDashboard === 'function') loadDashboard();
+          if (typeof loadPaymentMethods === 'function') loadPaymentMethods();
         } else {
           showToast(json.error || 'Error al registrar venta', 'error');
         }

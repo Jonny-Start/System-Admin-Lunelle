@@ -54,7 +54,6 @@ const saleSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['Efectivo', 'Nequi', 'Daviplata', 'Datafono'],
     required: [true, 'El método de pago es requerido']
   },
   notes: {
