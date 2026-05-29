@@ -26,6 +26,7 @@ exports.getProducts = async (req, res) => {
 
     const products = await Product.find(query)
       .populate('tag', 'name color')
+      .populate('tags', 'name color')
       .populate('category', 'name')
       .populate('provider', 'name')
       .sort({ createdAt: -1 });
@@ -42,8 +43,45 @@ exports.createProduct = async (req, res) => {
   try {
     const productData = req.body;
     
-    if (productData.sku === '') {
+    if (typeof productData.sku === 'string') {
+      productData.sku = productData.sku.trim();
+    }
+    if (!productData.sku) {
       delete productData.sku;
+    }
+
+    // Parsear y normalizar etiquetas
+    let tags = [];
+    if (productData.tags) {
+      try {
+        const parsed = JSON.parse(productData.tags);
+        tags = Array.isArray(parsed) ? parsed : [parsed];
+      } catch (e) {
+        tags = Array.isArray(productData.tags) ? productData.tags : [productData.tags];
+      }
+    } else if (productData.tag) {
+      tags = [productData.tag];
+    }
+    tags = tags.map(t => typeof t === 'string' ? t.trim() : t).filter(Boolean).slice(0, 2);
+    productData.tags = tags;
+    productData.tag = tags.length > 0 ? tags[0] : null;
+
+    // Parsear colores
+    if (productData.colors) {
+      try {
+        const parsedColors = typeof productData.colors === 'string' ? JSON.parse(productData.colors) : productData.colors;
+        productData.colors = Array.isArray(parsedColors) ? parsedColors.map(c => ({
+          name: (c.name || '').trim(),
+          hex: (c.hex || '#000000').trim(),
+          stock: Math.max(0, parseInt(c.stock, 10) || 0)
+        })).filter(c => c.name) : [];
+      } catch (e) {
+        productData.colors = [];
+      }
+      // If colors exist, stock = sum of color stocks
+      if (productData.colors.length > 0) {
+        productData.stock = productData.colors.reduce((sum, c) => sum + c.stock, 0);
+      }
     }
 
     // Asignar empresa del usuario logueado
@@ -88,9 +126,48 @@ exports.updateProduct = async (req, res) => {
     const updateData = req.body;
     let historyAction = 'Producto actualizado';
 
-    if (updateData.sku === '') {
+    // Parsear y normalizar etiquetas
+    if (updateData.tags !== undefined) {
+      let tags = [];
+      if (updateData.tags) {
+        try {
+          const parsed = JSON.parse(updateData.tags);
+          tags = Array.isArray(parsed) ? parsed : [parsed];
+        } catch (e) {
+          tags = Array.isArray(updateData.tags) ? updateData.tags : [updateData.tags];
+        }
+      }
+      tags = tags.map(t => typeof t === 'string' ? t.trim() : t).filter(Boolean).slice(0, 2);
+      updateData.tags = tags;
+      updateData.tag = tags.length > 0 ? tags[0] : null;
+    } else if (updateData.tag !== undefined) {
+      updateData.tags = updateData.tag ? [updateData.tag] : [];
+    }
+
+    if (typeof updateData.sku === 'string') {
+      updateData.sku = updateData.sku.trim();
+    }
+    if (!updateData.sku) {
       delete updateData.sku;
       updateData.$unset = { sku: 1 };
+    }
+
+    // Parsear colores
+    if (updateData.colors !== undefined) {
+      try {
+        const parsedColors = typeof updateData.colors === 'string' ? JSON.parse(updateData.colors) : updateData.colors;
+        updateData.colors = Array.isArray(parsedColors) ? parsedColors.map(c => ({
+          name: (c.name || '').trim(),
+          hex: (c.hex || '#000000').trim(),
+          stock: Math.max(0, parseInt(c.stock, 10) || 0)
+        })).filter(c => c.name) : [];
+      } catch (e) {
+        updateData.colors = [];
+      }
+      // If colors exist, stock = sum of color stocks
+      if (updateData.colors.length > 0) {
+        updateData.stock = updateData.colors.reduce((sum, c) => sum + c.stock, 0);
+      }
     }
 
     // Verificar si el stock cambió

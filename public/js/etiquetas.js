@@ -8,6 +8,26 @@ let bulkStockFilter = 'all';
 
 const colorPresets = ['#6366f1', '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'];
 
+// -- Contrast Helper --
+function getContrastColor(hexColor) {
+  if (!hexColor) return '#ffffff';
+  const hex = hexColor.replace('#', '');
+  let r, g, b;
+  if (hex.length === 3) {
+    r = parseInt(hex.charAt(0) + hex.charAt(0), 16);
+    g = parseInt(hex.charAt(1) + hex.charAt(1), 16);
+    b = parseInt(hex.charAt(2) + hex.charAt(2), 16);
+  } else if (hex.length === 6) {
+    r = parseInt(hex.substr(0, 2), 16);
+    g = parseInt(hex.substr(2, 2), 16);
+    b = parseInt(hex.substr(4, 2), 16);
+  } else {
+    return '#ffffff';
+  }
+  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  return (yiq >= 128) ? '#0f172a' : '#ffffff';
+}
+
 // ---- Tag CRUD ----
 
 async function fetchTags() {
@@ -177,7 +197,9 @@ function renderColorPresets() {
 function updateTagPreview() {
   const name = document.getElementById('tagNameInput').value || 'Etiqueta';
   const color = document.getElementById('tagColorInput').value;
-  document.getElementById('tagPreviewChip').style.backgroundColor = color;
+  const chip = document.getElementById('tagPreviewChip');
+  chip.style.backgroundColor = color;
+  chip.style.color = getContrastColor(color);
   document.getElementById('tagPreviewLabel').textContent = name;
 }
 

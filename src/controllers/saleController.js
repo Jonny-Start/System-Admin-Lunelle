@@ -47,6 +47,36 @@ exports.createSale = async (req, res) => {
         });
       }
 
+      // Handle color-based stock
+      let soldColor = null;
+      if (product.colors && product.colors.length > 0) {
+        if (!item.colorName) {
+          await session.abortTransaction();
+          return res.status(400).json({
+            success: false,
+            error: `Debe seleccionar un color para "${product.name}"`
+          });
+        }
+        const colorIdx = product.colors.findIndex(c => c.name === item.colorName);
+        if (colorIdx === -1) {
+          await session.abortTransaction();
+          return res.status(400).json({
+            success: false,
+            error: `Color "${item.colorName}" no encontrado para "${product.name}"`
+          });
+        }
+        const colorEntry = product.colors[colorIdx];
+        if (colorEntry.stock < qty) {
+          await session.abortTransaction();
+          return res.status(400).json({
+            success: false,
+            error: `Stock insuficiente del color "${colorEntry.name}" para "${product.name}". Disponible: ${colorEntry.stock}, Solicitado: ${qty}`
+          });
+        }
+        product.colors[colorIdx].stock -= qty;
+        soldColor = { name: colorEntry.name, hex: colorEntry.hex };
+      }
+
       const unitPrice = item.unitPrice !== undefined ? Number(item.unitPrice) : product.salePrice;
       const unitCost = product.purchasePrice;
       const subtotal = unitPrice * qty;
@@ -59,17 +89,22 @@ exports.createSale = async (req, res) => {
         unitCost,
         unitPrice,
         subtotal,
-        profit
+        profit,
+        color: soldColor || { name: null, hex: null }
       });
 
       total += subtotal;
       totalProfit += profit;
 
-      // Decrease stock
-      product.stock -= qty;
+      // Decrease stock (for color products, recalculate from colors)
+      if (product.colors && product.colors.length > 0) {
+        product.stock = product.colors.reduce((sum, c) => sum + (c.stock || 0), 0);
+      } else {
+        product.stock -= qty;
+      }
       product.history.push({
         user: req.user._id,
-        action: `Venta registrada: -${qty} unidades (Stock: ${product.stock + qty} → ${product.stock})`
+        action: `Venta registrada: -${qty} unidades${soldColor ? ` (Color: ${soldColor.name})` : ''} (Stock: ${product.stock + qty} → ${product.stock})`
       });
       await product.save({ session });
     }
@@ -210,10 +245,19 @@ exports.deleteSale = async (req, res) => {
     for (const item of sale.items) {
       const product = await Product.findById(item.product).session(session);
       if (product) {
-        product.stock += item.quantity;
+        // Restore color-specific stock if applicable
+        if (item.color && item.color.name && product.colors && product.colors.length > 0) {
+          const colorIdx = product.colors.findIndex(c => c.name === item.color.name);
+          if (colorIdx !== -1) {
+            product.colors[colorIdx].stock += item.quantity;
+          }
+          product.stock = product.colors.reduce((sum, c) => sum + (c.stock || 0), 0);
+        } else {
+          product.stock += item.quantity;
+        }
         product.history.push({
           user: req.user._id,
-          action: `Venta anulada: +${item.quantity} unidades devueltas (Stock: ${product.stock - item.quantity} → ${product.stock})`
+          action: `Venta anulada: +${item.quantity} unidades devueltas${item.color && item.color.name ? ` (Color: ${item.color.name})` : ''} (Stock: ${product.stock - item.quantity} → ${product.stock})`
         });
         await product.save({ session });
       }

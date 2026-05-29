@@ -261,7 +261,11 @@ function renderSalesList(sales, total, page, pages) {
     const date = new Date(sale.createdAt);
     const dateStr = date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
     const timeStr = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-    const itemsSummary = sale.items.map(it => it.productName).join(', ');
+    const itemsSummary = sale.items.map(it => {
+      const colorDot = it.color && it.color.name ? `<span class="inline-block w-2 h-2 rounded-full" style="background-color: ${it.color.hex || '#888'}"></span> ` : '';
+      return it.productName;
+    }).join(', ');
+    const hasColors = sale.items.some(it => it.color && it.color.name);
     const shortId = sale._id.slice(-6).toUpperCase();
     const seller = sale.seller ? sale.seller.name : 'N/A';
 
@@ -403,10 +407,12 @@ async function viewSaleDetail(id) {
             <span>Producto</span>
             <span>Subtotal</span>
           </div>
-          ${sale.items.map(item => `
+          ${sale.items.map(item => {
+          const colorBadge = item.color && item.color.name ? `<span class="inline-flex items-center gap-1 ml-2"><span class="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20" style="background-color: ${item.color.hex || '#888'};"></span><span class="text-[10px] text-slate-400 font-medium">${item.color.name}</span></span>` : '';
+          return `
           <div class="px-4 py-3 flex items-center justify-between border-t border-slate-800/30">
             <div class="min-w-0 flex-1">
-              <p class="text-sm text-white font-medium truncate">${item.productName}</p>
+              <p class="text-sm text-white font-medium truncate flex items-center">${item.productName}${colorBadge}</p>
               <p class="text-[10px] text-slate-500 mt-0.5">${item.quantity} × $${item.unitPrice.toLocaleString('es-CO')}</p>
             </div>
             <div class="text-right shrink-0 ml-4">
@@ -415,7 +421,8 @@ async function viewSaleDetail(id) {
                 ${item.profit >= 0 ? '+' : ''}$${item.profit.toLocaleString('es-CO')}
               </p>
             </div>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
         </div>
 
         <!-- Totals -->

@@ -16,6 +16,24 @@ const historySchema = new mongoose.Schema({
   }
 });
 
+const colorSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  hex: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  stock: {
+    type: Number,
+    default: 0,
+    min: 0
+  }
+}, { _id: true });
+
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -40,6 +58,13 @@ const productSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tag',
     default: null
+  },
+  tags: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tag'
+    }],
+    default: []
   },
   provider: {
     type: mongoose.Schema.Types.ObjectId,
@@ -77,9 +102,21 @@ const productSchema = new mongoose.Schema({
     ref: 'Company',
     required: true
   },
+  colors: {
+    type: [colorSchema],
+    default: []
+  },
   history: [historySchema]
 }, {
   timestamps: true
+});
+
+// Auto-calculate stock from colors when colors are defined
+productSchema.pre('save', function(next) {
+  if (this.colors && this.colors.length > 0) {
+    this.stock = this.colors.reduce((sum, c) => sum + (c.stock || 0), 0);
+  }
+  next();
 });
 
 module.exports = mongoose.model('Product', productSchema);

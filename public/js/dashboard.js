@@ -224,7 +224,10 @@ function recalcInvestment() {
       products = products.filter(p => p.category && fc.includes(p.category._id || p.category));
     }
     if (ft.length > 0) {
-      products = products.filter(p => p.tag && ft.includes(p.tag._id || p.tag));
+      products = products.filter(p => {
+        const pTags = (p.tags && p.tags.length > 0) ? p.tags : (p.tag ? [p.tag] : []);
+        return pTags.some(t => ft.includes(t._id || t));
+      });
     }
 
     const baseTotal = products.reduce((s, p) => s + ((p.purchasePrice||0) * (p.stock||0)), 0);
