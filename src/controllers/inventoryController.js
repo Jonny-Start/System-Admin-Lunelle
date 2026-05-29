@@ -1,5 +1,6 @@
 const Product = require('../models/Product');
 const driveService = require('../services/driveService');
+const { makeAccentInsensitiveRegex } = require('../utils/queryHelper');
 
 // @desc    Obtener todos los productos (con filtros) de la empresa del usuario
 // @route   GET /api/inventory
@@ -10,9 +11,10 @@ exports.getProducts = async (req, res) => {
     let query = { company: req.user.company }; // Filtrar por empresa
 
     if (search) {
+      const searchRegex = makeAccentInsensitiveRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { sku: { $regex: search, $options: 'i' } }
+        { name: searchRegex },
+        { sku: searchRegex }
       ];
     }
 

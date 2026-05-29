@@ -319,8 +319,8 @@ function renderBulkProducts(filterQuery = '') {
 
   let products = currentProducts;
   if (filterQuery) {
-    const q = filterQuery.toLowerCase();
-    products = products.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.sku && p.sku.toLowerCase().includes(q)));
+    const q = cleanSearchString(filterQuery);
+    products = products.filter(p => (p.name && cleanSearchString(p.name).includes(q)) || (p.sku && cleanSearchString(p.sku).includes(q)));
   }
 
   if (bulkStockFilter === 'outOfStock') {
@@ -373,9 +373,9 @@ function toggleProductSelection(id) {
 }
 
 function toggleSelectAll() {
-  const q = document.getElementById('bulkSearchInput').value.toLowerCase();
+  const q = cleanSearchString(document.getElementById('bulkSearchInput').value);
   let visibleProducts = currentProducts;
-  if (q) visibleProducts = visibleProducts.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.sku && p.sku.toLowerCase().includes(q)));
+  if (q) visibleProducts = visibleProducts.filter(p => (p.name && cleanSearchString(p.name).includes(q)) || (p.sku && cleanSearchString(p.sku).includes(q)));
 
   if (bulkStockFilter === 'outOfStock') {
     visibleProducts = visibleProducts.filter(p => p.stock === 0);

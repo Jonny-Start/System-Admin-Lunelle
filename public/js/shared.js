@@ -44,3 +44,9 @@ function getRawValue(input) {
 function preventNegative(input) {
   if (input.value < 0) input.value = Math.abs(input.value);
 }
+
+function cleanSearchString(str) {
+  if (!str) return '';
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+

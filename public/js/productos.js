@@ -356,9 +356,9 @@ function renderTagFilterChips() {
 }
 
 function applyCombinedFilters() {
-  const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+  const searchQuery = cleanSearchString(document.getElementById('searchInput').value);
   let filtered = currentProducts;
-  if (searchQuery) filtered = filtered.filter(p => (p.name && p.name.toLowerCase().includes(searchQuery)) || (p.sku && p.sku.toLowerCase().includes(searchQuery)));
+  if (searchQuery) filtered = filtered.filter(p => (p.name && cleanSearchString(p.name).includes(searchQuery)) || (p.sku && cleanSearchString(p.sku).includes(searchQuery)));
   if (filterState.categories.length > 0) filtered = filtered.filter(p => {
     const catId = getCategoryId(p);
     return filterState.categories.includes(catId);
@@ -710,8 +710,8 @@ function closeCatDropdown() {
 
 function filterCatDropdown(query) {
   const dropdown = document.getElementById('catDropdown');
-  const q = query.toLowerCase().trim();
-  const filtered = q ? currentCategories.filter(c => c.name.toLowerCase().includes(q)) : currentCategories;
+  const q = cleanSearchString(query);
+  const filtered = q ? currentCategories.filter(c => cleanSearchString(c.name).includes(q)) : currentCategories;
   if (filtered.length === 0) { dropdown.innerHTML = `<div class="custom-select-empty"><i class="ph ph-magnifying-glass text-lg mb-1"></i><br>No se encontraron categorías</div>`; }
   else { dropdown.innerHTML = filtered.map(cat => { const accent = catColors[currentCategories.indexOf(cat) % catColors.length]; return `<div class="custom-select-option" onmousedown="selectCategory('${cat._id}', '${cat.name}')"><span class="w-2 h-2 rounded-full shrink-0 ${accent}" style="background: var(--cat-color);"></span>${cat.name}</div>`; }).join(''); }
 }
@@ -744,8 +744,8 @@ function closeProvDropdown() {
 
 function filterProvDropdown(query) {
   const dropdown = document.getElementById('provDropdown');
-  const q = query.toLowerCase().trim();
-  const filtered = q ? currentProviders.filter(p => p.name.toLowerCase().includes(q)) : currentProviders;
+  const q = cleanSearchString(query);
+  const filtered = q ? currentProviders.filter(p => cleanSearchString(p.name).includes(q)) : currentProviders;
   if (filtered.length === 0) { dropdown.innerHTML = `<div class="custom-select-empty"><i class="ph ph-magnifying-glass text-lg mb-1"></i><br>No se encontraron proveedores</div>`; }
   else { dropdown.innerHTML = filtered.map(prov => { return `<div class="custom-select-option" onmousedown="selectProvider('${prov._id}', '${prov.name}')"><span class="w-2 h-2 rounded-full shrink-0 bg-indigo-500"></span>${prov.name}</div>`; }).join(''); }
 }

@@ -397,13 +397,13 @@
 
     // Product search
     document.getElementById('qsProductSearch')?.addEventListener('input', function() {
-      const q = this.value.toLowerCase().trim();
+      const q = cleanSearchString(this.value);
       const dropdown = document.getElementById('qsProductDropdown');
       if (!q) { dropdown.classList.add('hidden'); return; }
 
       const cartIds = qsCart.map(c => c.product + (c.colorName || ''));
       const matches = qsProducts.filter(p =>
-        (p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))) &&
+        ((p.name && cleanSearchString(p.name).includes(q)) || (p.sku && cleanSearchString(p.sku).includes(q))) &&
         p.stock > 0
       ).slice(0, 8);
 

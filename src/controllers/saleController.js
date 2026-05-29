@@ -2,6 +2,7 @@ const Sale = require('../models/Sale');
 const Product = require('../models/Product');
 const PaymentMethod = require('../models/PaymentMethod');
 const mongoose = require('mongoose');
+const { makeAccentInsensitiveRegex } = require('../utils/queryHelper');
 
 // @desc    Registrar nueva venta (descuenta stock automáticamente)
 // @route   POST /api/sales
@@ -173,7 +174,7 @@ exports.getSales = async (req, res) => {
 
     // Search by product name in items
     if (search) {
-      query['items.productName'] = { $regex: search, $options: 'i' };
+      query['items.productName'] = makeAccentInsensitiveRegex(search);
     }
 
     const skip = (Number(page) - 1) * Number(limit);
